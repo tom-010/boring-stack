@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Link } from "react-router"
-import { Trash2 } from "lucide-react"
+import { Check, Trash2 } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -21,39 +20,36 @@ import {
   PaginationPrevious,
 } from "~/components/ui/pagination"
 import { Button } from "~/components/ui/button"
-import type { Project } from "~/db/schema"
+import type { Todo } from "~/db/schema"
 
-interface ProjectsTableProps {
-  projects: Project[]
+interface TodosTableProps {
+  todos: Todo[]
+  onToggle: (todo: Todo) => void
   onDelete: (id: number) => void
 }
 
 const ITEMS_PER_PAGE = 10
 
-export function ProjectsTable({ projects, onDelete }: ProjectsTableProps) {
+export function TodosTable({ todos, onToggle, onDelete }: TodosTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
 
-  const totalPages = Math.ceil(projects.length / ITEMS_PER_PAGE)
+  const totalPages = Math.ceil(todos.length / ITEMS_PER_PAGE)
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-  const paginatedProjects = projects.slice(
+  const paginatedTodos = todos.slice(
     startIndex,
     startIndex + ITEMS_PER_PAGE
   )
 
-  const colorClasses: Record<string, string> = {
-    blue: "bg-blue-50",
-    red: "bg-red-50",
-    green: "bg-green-50",
-    purple: "bg-purple-50",
-    yellow: "bg-yellow-50",
+  const priorityColors: Record<string, string> = {
+    low: "bg-blue-50 text-blue-700 border-blue-200",
+    medium: "bg-yellow-50 text-yellow-700 border-yellow-200",
+    high: "bg-red-50 text-red-700 border-red-200",
   }
 
-  const colorDots: Record<string, string> = {
-    blue: "bg-blue-500",
-    red: "bg-red-500",
-    green: "bg-green-500",
-    purple: "bg-purple-500",
-    yellow: "bg-yellow-500",
+  const priorityBadges: Record<string, string> = {
+    low: "bg-blue-100 text-blue-800",
+    medium: "bg-yellow-100 text-yellow-800",
+    high: "bg-red-100 text-red-800",
   }
 
   const handlePrevious = () => {
@@ -154,55 +150,76 @@ export function ProjectsTable({ projects, onDelete }: ProjectsTableProps) {
         <Table>
           <TableHeader>
             <TableRow className="bg-gray-50">
-              <TableHead className="w-12">#</TableHead>
-              <TableHead>Name</TableHead>
+              <TableHead className="w-12"></TableHead>
+              <TableHead>Title</TableHead>
               <TableHead className="hidden md:table-cell">Description</TableHead>
-              <TableHead className="hidden md:table-cell">Created</TableHead>
+              <TableHead className="hidden sm:table-cell">Priority</TableHead>
+              <TableHead className="hidden lg:table-cell">Due Date</TableHead>
               <TableHead className="text-right w-20">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedProjects.length === 0 ? (
+            {paginatedTodos.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                  No projects found
+                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                  No todos found
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedProjects.map((project, idx) => (
+              paginatedTodos.map((todo) => (
                 <TableRow
-                  key={project.id}
+                  key={todo.id}
                   className={`hover:bg-gray-50 transition-colors ${
-                    colorClasses[project.color as keyof typeof colorClasses]
+                    todo.completed ? "opacity-60" : ""
                   }`}
                 >
-                  <TableCell className="font-medium text-gray-600">
-                    {startIndex + idx + 1}
+                  <TableCell>
+                    <button
+                      onClick={() => onToggle(todo)}
+                      className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                        todo.completed
+                          ? "bg-green-500 border-green-500"
+                          : "border-gray-300 hover:border-green-500"
+                      }`}
+                    >
+                      {todo.completed && <Check size={14} className="text-white" />}
+                    </button>
                   </TableCell>
                   <TableCell>
-                    <Link
-                      to={`/projects/${project.id}`}
-                      className="flex items-center gap-2 hover:underline font-medium"
+                    <span
+                      className={`font-medium ${
+                        todo.completed
+                          ? "text-gray-400 line-through"
+                          : "text-gray-800"
+                      }`}
                     >
-                      <span
-                        className={`inline-block w-3 h-3 rounded-full ${
-                          colorDots[project.color as keyof typeof colorDots]
-                        }`}
-                      />
-                      {project.name}
-                    </Link>
+                      {todo.title}
+                    </span>
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-sm text-gray-600">
-                    {project.description || "-"}
+                    {todo.description || "-"}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-sm text-gray-500">
-                    {new Date(project.createdAt).toLocaleDateString()}
+                  <TableCell className="hidden sm:table-cell">
+                    <span
+                      className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                        priorityBadges[
+                          todo.priority as keyof typeof priorityBadges
+                        ] || "bg-gray-100"
+                      }`}
+                    >
+                      {todo.priority}
+                    </span>
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell text-sm text-gray-600">
+                    {todo.dueDate
+                      ? new Date(todo.dueDate).toLocaleDateString()
+                      : "-"}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onDelete(project.id)}
+                      onClick={() => onDelete(todo.id)}
                       className="text-red-500 hover:bg-red-50 hover:text-red-700"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -246,9 +263,9 @@ export function ProjectsTable({ projects, onDelete }: ProjectsTableProps) {
       )}
 
       <div className="text-sm text-gray-600 text-center">
-        Showing {Math.min(startIndex + 1, projects.length)} to{" "}
-        {Math.min(startIndex + ITEMS_PER_PAGE, projects.length)} of{" "}
-        {projects.length} projects
+        Showing {Math.min(startIndex + 1, todos.length)} to{" "}
+        {Math.min(startIndex + ITEMS_PER_PAGE, todos.length)} of{" "}
+        {todos.length} todos
       </div>
     </div>
   )

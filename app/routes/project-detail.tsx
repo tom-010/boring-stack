@@ -1,8 +1,9 @@
 import type { Route } from "./+types/project-detail";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router";
-import { Plus, Check, Trash2, ArrowLeft } from "lucide-react";
+import { Plus, ArrowLeft } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { TodosTable } from "~/components/todos-table";
 import type { Project, Todo } from "~/db/schema";
 
 export function meta({ params }: Route.MetaArgs) {
@@ -125,12 +126,6 @@ export default function ProjectDetailPage() {
     yellow: "bg-yellow-100",
   };
 
-  const priorityColors: Record<string, string> = {
-    low: "bg-blue-100 text-blue-800",
-    medium: "bg-yellow-100 text-yellow-800",
-    high: "bg-red-100 text-red-800",
-  };
-
   if (loading) {
     return (
       <div className="p-6 md:p-8">
@@ -206,59 +201,11 @@ export default function ProjectDetailPage() {
             <p className="text-lg">No todos yet. Create one to get started!</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {todos.map((todo) => (
-              <div
-                key={todo.id}
-                className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-4 flex items-center gap-3"
-              >
-                <button
-                  onClick={() => toggleTodo(todo)}
-                  className={`flex-shrink-0 w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
-                    todo.completed
-                      ? "bg-green-500 border-green-500"
-                      : "border-gray-300 hover:border-green-500"
-                  }`}
-                >
-                  {todo.completed && <Check size={16} className="text-white" />}
-                </button>
-
-                <div className="flex-1">
-                  <span
-                    className={`text-lg ${
-                      todo.completed
-                        ? "text-gray-400 line-through"
-                        : "text-gray-800"
-                    }`}
-                  >
-                    {todo.title}
-                  </span>
-                  {todo.description && (
-                    <p className="text-sm text-gray-500">{todo.description}</p>
-                  )}
-                </div>
-
-                {todo.priority && (
-                  <span
-                    className={`px-3 py-1 rounded text-xs font-medium ${
-                      priorityColors[
-                        todo.priority as keyof typeof priorityColors
-                      ]
-                    }`}
-                  >
-                    {todo.priority}
-                  </span>
-                )}
-
-                <button
-                  onClick={() => deleteTodo(todo.id)}
-                  className="flex-shrink-0 p-2 text-red-500 hover:bg-red-50 rounded transition-colors"
-                >
-                  <Trash2 size={18} />
-                </button>
-              </div>
-            ))}
-          </div>
+          <TodosTable
+            todos={todos}
+            onToggle={toggleTodo}
+            onDelete={deleteTodo}
+          />
         )}
 
         <div className="mt-8 pt-6 border-t text-sm text-gray-600">

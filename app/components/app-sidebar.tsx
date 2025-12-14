@@ -1,6 +1,6 @@
 "use client"
 
-import { Folder, CheckSquare2, BarChart3, Settings } from "lucide-react"
+import { Folder, CheckSquare2, BarChart3 } from "lucide-react"
 import { Link } from "react-router"
 import {
   Sidebar,
@@ -14,8 +14,7 @@ import {
 
 const navItems = [
   { label: "Projects", href: "/", icon: Folder },
-  { label: "Analytics", href: "/", icon: BarChart3 },
-  { label: "Settings", href: "/", icon: Settings },
+  { label: "Analytics", href: "/analytics", icon: BarChart3 },
 ]
 
 export function AppSidebar() {
