@@ -1,8 +1,6 @@
-# Welcome to React Router!
+# Todo App with Drizzle ORM
 
-A modern, production-ready template for building full-stack React applications using React Router.
-
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+A modern full-stack todo application built with React Router, Drizzle ORM, SQLite, and Drizzle Studio.
 
 ## Features
 
@@ -12,6 +10,9 @@ A modern, production-ready template for building full-stack React applications u
 - 🔄 Data loading and mutations
 - 🔒 TypeScript by default
 - 🎉 TailwindCSS for styling
+- 💾 **SQLite database with Drizzle ORM**
+- 🎨 **Drizzle Studio for visual database management**
+- ✅ Todo CRUD operations
 - 📖 [React Router docs](https://reactrouter.com/)
 
 ## Getting Started
@@ -33,6 +34,22 @@ npm run dev
 ```
 
 Your application will be available at `http://localhost:5173`.
+
+### Database Management
+
+Start Drizzle Studio to manage your database visually:
+
+```bash
+npm run db:studio
+```
+
+This opens **Drizzle Studio** at `https://local.drizzle.studio` where you can:
+- Browse and manage database tables
+- Create, update, and delete records
+- View table schemas
+- Filter and search data
+
+For detailed database information, see [DATABASE_GUIDE.md](./DATABASE_GUIDE.md).
 
 ## Building for Production
 

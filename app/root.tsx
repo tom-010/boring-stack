@@ -8,6 +8,8 @@ import {
 } from "react-router";
 
 import type { Route } from "./+types/root";
+import { SidebarProvider } from "~/components/ui/sidebar";
+import { AppSidebar } from "~/components/app-sidebar";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
@@ -33,7 +35,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {children}
+        <SidebarProvider>
+          <AppSidebar />
+          <div className="flex-1 flex flex-col">
+            {children}
+          </div>
+        </SidebarProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
