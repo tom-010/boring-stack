@@ -1,14 +1,13 @@
 import { type RouteConfig, index, route, layout } from "@react-router/dev/routes";
 
 export default [
-  layout("routes/layout.tsx", [
-    index("routes/projects.tsx"),
-    route("projects/:id", "routes/project-detail.tsx"),
-    route("auth/signin", "routes/auth.signin.tsx"),
-    route("auth/signup", "routes/auth.signup.tsx"),
-    route("admin", "routes/admin.tsx"),
+  layout("routes/_layout.tsx", [
+    index("routes/_index.tsx"),
+    route("projects/:id", "routes/projects.$id.tsx"),
   ]),
-  route("api/projects", "routes/api.projects.tsx"),
-  route("api/todos", "routes/api.todos.tsx"),
-  route("api/auth/*", "routes/api.auth.tsx"),
+  route("api/create-project", "routes/api/create-project.ts"),
+  route("api/delete-project", "routes/api/delete-project.ts"),
+  route("api/create-todo", "routes/api/create-todo.ts"),
+  route("api/update-todo", "routes/api/update-todo.ts"),
+  route("api/delete-todo", "routes/api/delete-todo.ts"),
 ] satisfies RouteConfig;

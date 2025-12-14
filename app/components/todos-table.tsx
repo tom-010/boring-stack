@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { Form } from "react-router"
 import { Check, Trash2 } from "lucide-react"
 import {
   Table,
@@ -21,16 +22,15 @@ import {
 } from "~/components/ui/pagination"
 import { Button } from "~/components/ui/button"
 import type { Todo } from "~/db/schema"
+import { routes, getRoutePath } from "~/lib/routes"
 
 interface TodosTableProps {
   todos: Todo[]
-  onToggle: (todo: Todo) => void
-  onDelete: (id: number) => void
 }
 
 const ITEMS_PER_PAGE = 10
 
-export function TodosTable({ todos, onToggle, onDelete }: TodosTableProps) {
+export function TodosTable({ todos }: TodosTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
 
   const totalPages = Math.ceil(todos.length / ITEMS_PER_PAGE)
@@ -174,16 +174,25 @@ export function TodosTable({ todos, onToggle, onDelete }: TodosTableProps) {
                   }`}
                 >
                   <TableCell>
-                    <button
-                      onClick={() => onToggle(todo)}
-                      className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                        todo.completed
-                          ? "bg-green-500 border-green-500"
-                          : "border-gray-300 hover:border-green-500"
-                      }`}
+                    <Form
+                      method="put"
+                      action={routes.updateTodo.path}
+                      style={{ display: "inline" }}
                     >
-                      {todo.completed && <Check size={14} className="text-white" />}
-                    </button>
+                      <input type="hidden" name="id" value={todo.id} />
+                      <input type="hidden" name="projectId" value={todo.projectId} />
+                      <input type="hidden" name="completed" value={String(!todo.completed)} />
+                      <button
+                        type="submit"
+                        className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                          todo.completed
+                            ? "bg-green-500 border-green-500"
+                            : "border-gray-300 hover:border-green-500"
+                        }`}
+                      >
+                        {todo.completed && <Check size={14} className="text-white" />}
+                      </button>
+                    </Form>
                   </TableCell>
                   <TableCell>
                     <span
@@ -216,14 +225,27 @@ export function TodosTable({ todos, onToggle, onDelete }: TodosTableProps) {
                       : "-"}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDelete(todo.id)}
-                      className="text-red-500 hover:bg-red-50 hover:text-red-700"
+                    <Form
+                      method="delete"
+                      action={routes.deleteTodo.path}
+                      onSubmit={(e) => {
+                        if (!window.confirm("Are you sure you want to delete this todo?")) {
+                          e.preventDefault()
+                        }
+                      }}
+                      style={{ display: "inline" }}
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      <input type="hidden" name="id" value={todo.id} />
+                      <input type="hidden" name="projectId" value={todo.projectId} />
+                      <Button
+                        type="submit"
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:bg-red-50 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </Form>
                   </TableCell>
                 </TableRow>
               ))

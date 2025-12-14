@@ -1,4 +1,4 @@
-import { integer, text, sqliteTable, foreignKey, primaryKey } from 'drizzle-orm/sqlite-core';
+import { integer, text, sqliteTable, foreignKey } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 export const projects = sqliteTable('projects', {
@@ -33,67 +33,7 @@ export const todos = sqliteTable(
   ]
 );
 
-export const users = sqliteTable('user', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  email: text('email').notNull().unique(),
-  emailVerified: integer('email_verified', { mode: 'boolean' }).default(false).notNull(),
-  password: text('password'),
-  image: text('image'),
-  role: text('role').default('user').notNull(), // 'user' | 'admin'
-  createdAt: text('created_at')
-    .notNull()
-    .default(sql`CURRENT_TIMESTAMP`),
-});
-
-export const sessions = sqliteTable('session', {
-  id: text('id').primaryKey(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  token: text('token').notNull().unique(),
-  expiresAt: integer('expires_at').notNull(),
-  createdAt: text('created_at')
-    .notNull()
-    .default(sql`CURRENT_TIMESTAMP`),
-});
-
-export const accounts = sqliteTable(
-  'account',
-  {
-    userId: text('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    accountId: text('account_id').notNull(),
-    provider: text('provider').notNull(),
-    providerAccountId: text('provider_account_id').notNull(),
-    refreshToken: text('refresh_token'),
-    accessToken: text('access_token'),
-    expiresAt: integer('expires_at'),
-    password: text('password'),
-  },
-  (table) => [
-    primaryKey({
-      columns: [table.userId, table.provider],
-    }),
-  ]
-);
-
-export const verifications = sqliteTable('verification', {
-  id: text('id').primaryKey(),
-  identifier: text('identifier').notNull(),
-  value: text('value').notNull(),
-  expiresAt: integer('expires_at').notNull(),
-  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
-});
-
 export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;
 export type Todo = typeof todos.$inferSelect;
 export type NewTodo = typeof todos.$inferInsert;
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
-export type Session = typeof sessions.$inferSelect;
-export type Account = typeof accounts.$inferSelect;
-export type Verification = typeof verifications.$inferSelect;

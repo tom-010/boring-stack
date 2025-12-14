@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Link } from "react-router"
+import { Link, Form } from "react-router"
 import { Trash2 } from "lucide-react"
 import {
   Table,
@@ -22,15 +22,15 @@ import {
 } from "~/components/ui/pagination"
 import { Button } from "~/components/ui/button"
 import type { Project } from "~/db/schema"
+import { routes, getRoutePath } from "~/lib/routes"
 
 interface ProjectsTableProps {
   projects: Project[]
-  onDelete: (id: number) => void
 }
 
 const ITEMS_PER_PAGE = 10
 
-export function ProjectsTable({ projects, onDelete }: ProjectsTableProps) {
+export function ProjectsTable({ projects }: ProjectsTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
 
   const totalPages = Math.ceil(projects.length / ITEMS_PER_PAGE)
@@ -181,7 +181,7 @@ export function ProjectsTable({ projects, onDelete }: ProjectsTableProps) {
                   </TableCell>
                   <TableCell>
                     <Link
-                      to={`/projects/${project.id}`}
+                      to={routes.projectDetail(project.id)}
                       className="flex items-center gap-2 hover:underline font-medium"
                     >
                       <span
@@ -199,14 +199,25 @@ export function ProjectsTable({ projects, onDelete }: ProjectsTableProps) {
                     {new Date(project.createdAt).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDelete(project.id)}
-                      className="text-red-500 hover:bg-red-50 hover:text-red-700"
+                    <Form
+                      method="delete"
+                      action={routes.deleteProject.path}
+                      onSubmit={(e) => {
+                        if (!window.confirm("Are you sure you want to delete this project?")) {
+                          e.preventDefault()
+                        }
+                      }}
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      <input type="hidden" name="id" value={project.id} />
+                      <Button
+                        type="submit"
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:bg-red-50 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </Form>
                   </TableCell>
                 </TableRow>
               ))
