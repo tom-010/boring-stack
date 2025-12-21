@@ -6,16 +6,19 @@
 </project_context>
 
 <commands>
-  <cmd name="start" description="Start dev server">npm run dev</cmd>
-  <cmd name="db:push" description="Sync schema to DB">npx prisma db push</cmd>
-  <cmd name="db:studio" description="View database GUI">npx prisma studio</cmd>
+  <cmd name="dev" description="Start dev server">npm run dev</cmd>
+  <cmd name="build" description="Build for production">npm run build</cmd>
+  <cmd name="typecheck" description="Run type checking">npm run typecheck</cmd>
+  <cmd name="db:migrate" description="Sync schema to DB">npm run db:migrate</cmd>
+  <cmd name="db:generate" description="Generate Prisma client">npm run db:generate</cmd>
+  <cmd name="db:studio" description="View database GUI">npm run db:studio</cmd>
   <cmd name="ui:add" description="Install component">npx shadcn@latest add</cmd>
-  <cmd name="lint" description="Fix generic issues">npm run lint</cmd>
 </commands>
 
 <architecture>
   <map>
-    Database:    ./prisma/schema.prisma (or ./db/schema.prisma)
+    Database:    ./prisma/schema.prisma
+    DB Client:   ./app/db/client.ts (exports `db`)
     UI Library:  ./app/components/ui/
     Routes:      ./app/routes/
     Utilities:   ./app/lib/utils.ts
@@ -36,6 +39,10 @@
 
 <coding_standards>
   <rules>
+    - **Import Alias:** ALWAYS use `~/` alias for imports (e.g., `import { Button } from '~/components/ui/button'`). Never use relative paths like `../../`.
+    - **DB Client:** Import as `import { db } from '~/db/client'`.
+    - **Utilities:** Import `cn` from `~/lib/utils`.
+    - **Zod Schemas:** Co-locate validation schemas in route files. Extract to `~/lib/schemas.ts` only after 3+ uses.
     - **UI First Step:** Always check if a Shadcn component exists before writing custom JSX.
     - **Styling:** Tailwind classes only.
     - **Type Safety:** Use `typeof loader` for type inference. Do not manually type API responses.
@@ -47,4 +54,27 @@
     - DO NOT write tests unless explicitly asked.
     - DO NOT abstract code until it is used 3 times (WET over DRY).
   </negative_constraints>
+
+  <verification>
+    - Run `npm run typecheck` after completing changes to catch errors early.
+  </verification>
 </coding_standards>
+
+<orientation>
+  When given a URL or asked about a feature, check these files first:
+  - `./app/routes.ts` — maps URLs to route files
+  - `./prisma/schema.prisma` — defines data models
+</orientation>
+
+<workflows>
+  <workflow name="Add a new model">
+    1. Add model to `prisma/schema.prisma`
+    2. Run `npm run db:migrate` then `npm run db:generate`
+    3. Create route file, add to `routes.ts`
+  </workflow>
+  <workflow name="Add a new page">
+    1. Create route file in `app/routes/`
+    2. Register in `app/routes.ts`
+    3. Add loader/action as needed
+  </workflow>
+</workflows>
