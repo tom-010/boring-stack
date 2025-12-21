@@ -1,0 +1,6 @@
+- [ ] nice sidebars
+- [ ] file upload with async processing for thumbnails -> to block storage
+- [ ] auth
+- [ ] a really good claude.md
+- [ ] forms
+- [ ] python services and integration
