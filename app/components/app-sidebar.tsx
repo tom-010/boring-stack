@@ -1,21 +1,15 @@
 "use client"
 
-import { Folder, CheckSquare2, BarChart3 } from "lucide-react"
+import { CheckSquare2, Folder } from "lucide-react"
 import { Link } from "react-router"
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "~/components/ui/sidebar"
-
-const navItems = [
-  { label: "Projects", href: "/", icon: Folder },
-  { label: "Analytics", href: "/analytics", icon: BarChart3 },
-]
 
 export function AppSidebar() {
   return (
@@ -28,24 +22,16 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {navItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton asChild>
-                <Link
-                  to={item.href}
-                  className="flex items-center gap-3 px-2 py-2 text-sm font-medium"
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <Link to="/">
+                <Folder className="h-4 w-4" />
+                <span>Projects</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter className="border-t px-4 py-4">
-        <p className="text-xs text-muted-foreground">© 2024 TodoApp</p>
-      </SidebarFooter>
     </Sidebar>
   )
 }

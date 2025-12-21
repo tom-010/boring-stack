@@ -22,7 +22,7 @@ import {
 } from "~/components/ui/pagination"
 import { Button } from "~/components/ui/button"
 import type { Todo } from "~/db/schema"
-import { routes, getRoutePath } from "~/lib/routes"
+import { routes } from "~/lib/routes"
 
 interface TodosTableProps {
   todos: Todo[]
@@ -158,7 +158,9 @@ export function TodosTable({ todos }: TodosTableProps) {
               paginatedTodos.map((todo) => (
                 <TableRow
                   key={todo.id}
-                  className={todo.completed ? "opacity-60" : ""}
+                  className={`${todo.completed ? "opacity-60" : ""} ${
+                    todo.priority === "high" && !todo.completed ? "bg-muted/50" : ""
+                  }`}
                 >
                   <TableCell>
                     <Form
@@ -183,9 +185,13 @@ export function TodosTable({ todos }: TodosTableProps) {
                   </TableCell>
                   <TableCell>
                     <span
-                      className={`font-medium ${
-                        todo.completed ? "text-muted-foreground line-through" : ""
-                      }`}
+                      className={
+                        todo.completed
+                          ? "text-muted-foreground line-through"
+                          : todo.priority === "low"
+                          ? "text-muted-foreground"
+                          : "font-medium"
+                      }
                     >
                       {todo.title}
                     </span>
@@ -194,9 +200,31 @@ export function TodosTable({ todos }: TodosTableProps) {
                     {todo.description || "-"}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
-                    <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-muted text-muted-foreground">
-                      {todo.priority}
-                    </span>
+                    <Form
+                      method="put"
+                      action={routes.updateTodo.path}
+                      style={{ display: "inline" }}
+                    >
+                      <input type="hidden" name="id" value={todo.id} />
+                      <input type="hidden" name="projectId" value={todo.projectId} />
+                      <input
+                        type="hidden"
+                        name="priority"
+                        value={
+                          todo.priority === "low"
+                            ? "medium"
+                            : todo.priority === "medium"
+                            ? "high"
+                            : "low"
+                        }
+                      />
+                      <button
+                        type="submit"
+                        className="px-2 py-1 rounded text-xs font-medium bg-muted text-muted-foreground hover:bg-muted/80 cursor-pointer"
+                      >
+                        {todo.priority}
+                      </button>
+                    </Form>
                   </TableCell>
                   <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
                     {todo.dueDate

@@ -22,7 +22,7 @@ import {
 } from "~/components/ui/pagination"
 import { Button } from "~/components/ui/button"
 import type { Project } from "~/db/schema"
-import { routes, getRoutePath } from "~/lib/routes"
+import { routes } from "~/lib/routes"
 
 interface ProjectsTableProps {
   projects: Project[]
