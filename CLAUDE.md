@@ -13,7 +13,17 @@ The Bottleneck is Cognitive Capacity, Not Hardware. Software velocity is constra
 Scale is a Distraction; Architect Only for Now. Speculative architecture for hypothetical futures is resource waste. Solve strictly for the immediate reality (e.g., 10 users). Leverage "Lindy" technologies—proven standards like SQL and HTTP—where failure modes are known; novelty introduces unquantified risk. Speed today is a requirement; speed tomorrow is achieved not by generic flexibility, but by a disciplined refusal to couple components.
 
 Value Follows a Power Law; Imperfection is Economic. The majority of utility derives from a minority of features. Perfectionism in the "long tail" or secondary UI is economic malpractice. Real-world usage is the only valid validation mechanism for the scientific method. Consequently, rapid, imperfect shipping outperforms perfect planning. A solution exists only when value is delivered; until then, it is merely inventory.
+
+Other little ideas:
+- The URL is the Source of Truth. The Database is the State. The Client is just a View. No API Layer, no client state like redux, no loading spinners.
+- Co-location is king: Put things together, best in a single file.
+- No magic. E.g. route.ts over file-system based routing. 
+- Keep things simple. E.g. no own caching layer.
+- Design for 10 users or less
+- Types are your friend as they provide fast feedback for fast iterations.
 <princples>
+
+<>
 
 <commands>
   <cmd name="dev" description="Start dev server">npm run dev</cmd>
@@ -52,9 +62,9 @@ Value Follows a Power Law; Imperfection is Economic. The majority of utility der
     - **Import Alias:** ALWAYS use `~/` alias for imports (e.g., `import { Button } from '~/components/ui/button'`). Never use relative paths like `../../`.
     - **DB Client:** Import as `import { db } from '~/db/client'`.
     - **Utilities:** Import `cn` from `~/lib/utils`.
-    - **Zod Schemas:** Co-locate validation schemas in route files. Extract to `~/lib/schemas.ts` only after 3+ uses.
+    - **Zod Schemas:** Put schemas into `~/lib/schemas.ts` and use them in frontend and backend code for full type safety everywhere.
     - **UI First Step:** Always check if a Shadcn component exists before writing custom JSX.
-    - **Styling:** Tailwind classes only.
+    - **Styling:** Tailwind classes only. Keep it simple. Use defaults where possible.
     - **Type Safety:** Use `typeof loader` for type inference. Do not manually type API responses.
     - **React Router v7:** Use `<Link>` and `<Form>`. Avoid native `<a>` or `<form>` tags to preserve SPA navigation.
   </rules>
@@ -63,6 +73,7 @@ Value Follows a Power Law; Imperfection is Economic. The majority of utility der
     - DO NOT create resource routes (API endpoints).
     - DO NOT write tests unless explicitly asked.
     - DO NOT abstract code until it is used 3 times (WET over DRY).
+    - clientLoader only if it really makes sense. Normally the exception.
   </negative_constraints>
 
   <verification>

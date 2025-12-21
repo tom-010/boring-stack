@@ -1,10 +1,12 @@
-import type { Route } from "./+types/_index";
+import type { Route } from "./+types/projects-list";
 import type { RouteHandle } from "~/components/page-header";
 import { Form, redirect } from "react-router";
 import { Plus, Folder } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { ProjectsTable } from "~/components/projects-table";
 import { db } from "~/db/client";
+import { getIntent, parseFormDataOrThrow } from "~/lib/forms";
+import { createProjectSchema, deleteByIdSchema } from "~/lib/schemas";
 
 export const handle: RouteHandle = {
   breadcrumb: { label: "Projects", href: "/" },
@@ -17,20 +19,21 @@ export async function loader() {
 
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
-  const intent = formData.get("intent");
+  const intent = getIntent(formData);
 
   switch (intent) {
     case "deleteProject": {
-      const id = parseInt(formData.get("id") as string);
+      const { id } = parseFormDataOrThrow(formData, deleteByIdSchema);
       await db.project.delete({ where: { id } });
       return redirect("/");
     }
 
     default: {
-      // Default: create project
-      const name = formData.get("name") as string;
+      const { name, description } = parseFormDataOrThrow(
+        formData,
+        createProjectSchema
+      );
       const color = (formData.get("color") as string) || "blue";
-      const description = formData.get("description") as string | undefined;
 
       const project = await db.project.create({
         data: { name, color, description },

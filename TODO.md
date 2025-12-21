@@ -1,9 +1,9 @@
-- [ ] nice sidebars
-- [ ] no api
+- [x] nice sidebars
+- [x] no api
 - [ ] file upload with async processing for thumbnails -> to block storage
 - [ ] auth
-- [ ] claude.md
-- [ ] testing
+- [x] claude.md
+- [ ] testing, approach
 - [ ] forms
 - [ ] python services and integration
 - [ ] feedback mechanisms (server logs, tests, browser, antigravity?)

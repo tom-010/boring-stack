@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import type { Route } from "./+types/projects.$id";
+import type { Route } from "./+types/project-detail";
 import type { RouteHandle, BreadcrumbItem } from "~/components/page-header";
 import { Form, redirect } from "react-router";
 import { Plus, Pencil } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { TodosTable } from "~/components/todos-table";
 import { db } from "~/db/client";
+import { getIntent, parseFormDataOrThrow } from "~/lib/forms";
+import {
+  updateProjectSchema,
+  createTodoSchema,
+  updateTodoSchema,
+  deleteByIdSchema,
+} from "~/lib/schemas";
 
 export const handle: RouteHandle = {
   breadcrumb: (data): BreadcrumbItem[] => {
@@ -41,13 +48,15 @@ export async function loader({ params }: Route.LoaderArgs) {
 
 export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
-  const intent = formData.get("intent");
+  const intent = getIntent(formData);
   const projectId = parseInt(params.id!);
 
   switch (intent) {
     case "updateProject": {
-      const name = formData.get("name") as string;
-      const description = formData.get("description") as string | undefined;
+      const { name, description } = parseFormDataOrThrow(
+        formData,
+        updateProjectSchema
+      );
       await db.project.update({
         where: { id: projectId },
         data: { name, description },
@@ -61,8 +70,10 @@ export async function action({ request, params }: Route.ActionArgs) {
     }
 
     case "createTodo": {
-      const title = formData.get("title") as string;
-      const priority = (formData.get("priority") as string) || "medium";
+      const { title, priority } = parseFormDataOrThrow(
+        formData,
+        createTodoSchema
+      );
       await db.todo.create({
         data: {
           projectId,
@@ -75,21 +86,22 @@ export async function action({ request, params }: Route.ActionArgs) {
     }
 
     case "updateTodo": {
-      const id = parseInt(formData.get("id") as string);
-      const completed = formData.get("completed");
-      const priority = formData.get("priority");
+      const { id, completed, priority } = parseFormDataOrThrow(
+        formData,
+        updateTodoSchema
+      );
       await db.todo.update({
         where: { id },
         data: {
-          ...(completed !== null && { completed: completed === "true" }),
-          ...(priority && { priority: priority as string }),
+          ...(completed !== undefined && { completed }),
+          ...(priority && { priority }),
         },
       });
       return redirect(`/projects/${projectId}`);
     }
 
     case "deleteTodo": {
-      const id = parseInt(formData.get("id") as string);
+      const { id } = parseFormDataOrThrow(formData, deleteByIdSchema);
       await db.todo.delete({ where: { id } });
       return redirect(`/projects/${projectId}`);
     }
