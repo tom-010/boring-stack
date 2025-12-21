@@ -5,8 +5,6 @@ import { Plus, ArrowLeft, Pencil } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { TodosTable } from "~/components/todos-table";
 import { db } from "~/db/client";
-import { todos as todosTable } from "~/db/schema";
-import { desc } from "drizzle-orm";
 import { routes } from "~/lib/routes";
 
 export async function loader({ params }: Route.LoaderArgs) {
@@ -15,17 +13,17 @@ export async function loader({ params }: Route.LoaderArgs) {
   }
 
   const projectId = parseInt(params.id);
-  const project = await db.query.projects.findFirst({
-    where: (p, { eq }) => eq(p.id, projectId),
+  const project = await db.project.findUnique({
+    where: { id: projectId },
   });
 
   if (!project) {
     throw new Response("Not Found", { status: 404 });
   }
 
-  const projectTodos = await db.query.todos.findMany({
-    where: (t, { eq }) => eq(t.projectId, projectId),
-    orderBy: desc(todosTable.createdAt),
+  const projectTodos = await db.todo.findMany({
+    where: { projectId },
+    orderBy: { createdAt: 'desc' },
   });
 
   return { project, todos: projectTodos };

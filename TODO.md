@@ -1,6 +1,9 @@
 - [ ] nice sidebars
+- [ ] no api
 - [ ] file upload with async processing for thumbnails -> to block storage
 - [ ] auth
-- [ ] a really good claude.md
+- [ ] claude.md
+- [ ] testing
 - [ ] forms
 - [ ] python services and integration
+- [ ] feedback mechanisms (server logs, tests, browser, antigravity?)

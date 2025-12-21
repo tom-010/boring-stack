@@ -7,7 +7,7 @@ import { db } from "~/db/client";
 import { routes } from "~/lib/routes";
 
 export async function loader() {
-  const projects = await db.query.projects.findMany();
+  const projects = await db.project.findMany();
   return { projects };
 }
 

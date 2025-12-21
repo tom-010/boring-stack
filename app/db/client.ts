@@ -1,8 +1,8 @@
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import * as schema from './schema';
+import { PrismaClient } from '@prisma/client';
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 
-const dbPath = process.env.DB_PATH || './db/app.db';
-const sqlite = new Database(dbPath);
+const adapter = new PrismaBetterSqlite3({
+  url: process.env.DATABASE_URL || 'file:./db/app.db',
+});
 
-export const db = drizzle(sqlite, { schema });
+export const db = new PrismaClient({ adapter });

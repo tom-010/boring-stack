@@ -21,7 +21,7 @@ import {
   PaginationPrevious,
 } from "~/components/ui/pagination"
 import { Button } from "~/components/ui/button"
-import type { Project } from "~/db/schema"
+import type { Project } from "@prisma/client"
 import { routes } from "~/lib/routes"
 
 interface ProjectsTableProps {

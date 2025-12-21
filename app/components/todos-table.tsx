@@ -21,7 +21,7 @@ import {
   PaginationPrevious,
 } from "~/components/ui/pagination"
 import { Button } from "~/components/ui/button"
-import type { Todo } from "~/db/schema"
+import type { Todo } from "@prisma/client"
 import { routes } from "~/lib/routes"
 
 interface TodosTableProps {
