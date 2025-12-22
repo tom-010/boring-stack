@@ -1,7 +1,9 @@
 import type { Route } from "./+types/todo-detail";
 import type { RouteHandle, BreadcrumbItem } from "~/components/page-header";
+import { Link } from "react-router";
+import { Pencil } from "lucide-react";
+import { Button } from "~/components/ui/button";
 import { db } from "~/db/client";
-import { requireAuth } from "~/lib/auth.server";
 
 export const handle: RouteHandle = {
   breadcrumb: (data): BreadcrumbItem[] => {
@@ -17,8 +19,7 @@ export const handle: RouteHandle = {
   },
 };
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-  await requireAuth(request);
+export async function loader({ params }: Route.LoaderArgs) {
   const todoId = parseInt(params.id!);
 
   const todo = await db.todo.findUnique({
@@ -40,9 +41,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   return { todo, project };
 }
 
-export function meta({ data }: Route.MetaArgs) {
+export function meta({ loaderData }: Route.MetaArgs) {
   return [
-    { title: data?.todo.title ?? "Todo" },
+    { title: loaderData?.todo.title ?? "Todo" },
     { name: "description", content: "View todo details" },
   ];
 }
@@ -53,11 +54,19 @@ export default function TodoDetailPage({ loaderData }: Route.ComponentProps) {
   return (
     <div className="p-6 md:p-8">
       <div className="max-w-2xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">{todo.title}</h1>
-          {todo.description && (
-            <p className="text-muted-foreground">{todo.description}</p>
-          )}
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">{todo.title}</h1>
+            {todo.description && (
+              <p className="text-muted-foreground">{todo.description}</p>
+            )}
+          </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link to={`/todos/${todo.id}/edit`}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit
+            </Link>
+          </Button>
         </div>
 
         <div className="space-y-4 text-sm">

@@ -34,6 +34,14 @@ export const updateTodoSchema = z.object({
   priority: priorityEnum.optional(),
 });
 
+export const editTodoSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200, "Title too long"),
+  description: z.string().max(1000, "Description too long").optional(),
+  priority: priorityEnum,
+  completed: z.string().optional().transform((v) => v === "on"),
+  dueDate: z.string().optional(),
+});
+
 // Generic schema for delete operations (just needs an id)
 export const deleteByIdSchema = z.object({
   id: z.coerce.number(),

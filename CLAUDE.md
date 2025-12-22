@@ -40,16 +40,22 @@ Other little ideas:
   <map>
     Database:    ./prisma/schema.prisma
     DB Client:   ./app/db/client.ts (exports `db`)
+    Auth:        ./app/lib/auth.server.ts (BetterAuth + Prisma adapter)
     UI Library:  ./app/components/ui/
     Routes:      ./app/routes/
     Utilities:   ./app/lib/utils.ts
   </map>
 
   <pattern name="Data Mutation (Strict)">
-    - **No API Routes:** `routes/api/*.ts` are normally not desired FORBIDDEN.
+    - **No API Routes:** `routes/api/*.ts` FORBIDDEN. Exception: `api.auth.$.ts` for BetterAuth.
     - **Actions:** Logic lives in `export async function action` co-located with the UI.
     - **Validation:** Validate `request.formData()` with Zod immediately.
     - **Feedback:** Return `data` or `errors` directly to the component.
+  </pattern>
+
+  <pattern name="Auth">
+    - **All routes require auth.** Call `await requireAuth(request)` in every loader.
+    - **Manage users via CLI:** `npx tsx scripts/manage-users.ts`
   </pattern>
 
   <pattern name="Code Output Behavior">

@@ -13,6 +13,7 @@ export const auth = betterAuth({
   },
 });
 
+// Auth check for protected layout - redirects to login if not authenticated
 export async function requireAuth(request: Request) {
   const session = await auth.api.getSession({
     headers: request.headers,

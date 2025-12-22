@@ -7,14 +7,12 @@ import { ProjectsTable } from "~/components/projects-table";
 import { db } from "~/db/client";
 import { getIntent, parseFormDataOrThrow } from "~/lib/forms";
 import { createProjectSchema, deleteByIdSchema } from "~/lib/schemas";
-import { requireAuth } from "~/lib/auth.server";
 
 export const handle: RouteHandle = {
   breadcrumb: { label: "Projects", href: "/" },
 };
 
-export async function loader({ request }: Route.LoaderArgs) {
-  await requireAuth(request);
+export async function loader() {
   const projects = await db.project.findMany();
   return { projects };
 }

@@ -2,8 +2,8 @@ import { db } from "../app/db/client";
 import { auth } from "../app/lib/auth.server";
 
 async function seedUser() {
-  const email = "admin@localhost";
-  const password = "admin";
+  const email = "admin@example.com";
+  const password = "9gxP1DmYQ36x26VwWoXsjw6DbgCagO4ga6UJC";
   const name = "Admin";
 
   // Check if user already exists
