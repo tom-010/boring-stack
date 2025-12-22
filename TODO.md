@@ -7,3 +7,4 @@
 - [ ] forms
 - [ ] python services and integration
 - [ ] feedback mechanisms (server logs, tests, browser, antigravity?)
+- [ ] Simple Observability. KISS!
