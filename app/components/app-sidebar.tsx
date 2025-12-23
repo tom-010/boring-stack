@@ -27,47 +27,63 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import { Label } from "~/components/ui/label"
 import { authClient } from "~/lib/auth-client"
+import type { Role } from "~/lib/roles"
 
 type User = {
   id: string
   name: string
   email: string
   image?: string | null
+  roles: Role[]
 }
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
   user: User | null
 }
 
-const navMain = [
-  {
-    title: "Workspace",
-    items: [
-      { title: "Projects", url: "/", icon: Folder },
-      { title: "Team", url: "#", icon: Users },
-      { title: "Reports", url: "#", icon: BarChart3 },
-    ],
-  },
-  {
-    title: "Organization",
-    items: [
-      { title: "Settings", url: "#", icon: Settings },
-      { title: "Documentation", url: "#", icon: FileText },
-      { title: "Help", url: "#", icon: HelpCircle },
-    ],
-  },
-]
+function getNavItems(isAdmin: boolean) {
+  const items = [
+    {
+      title: "Workspace",
+      items: [
+        { title: "Projects", url: "/", icon: Folder },
+        { title: "Team", url: "#", icon: Users },
+        { title: "Reports", url: "#", icon: BarChart3 },
+      ],
+    },
+    {
+      title: "Organization",
+      items: [
+        { title: "Settings", url: "#", icon: Settings },
+        { title: "Documentation", url: "#", icon: FileText },
+        { title: "Help", url: "#", icon: HelpCircle },
+      ],
+    },
+  ]
+
+  if (isAdmin) {
+    items.push({
+      title: "Admin",
+      items: [{ title: "Users", url: "/admin/users", icon: Users }],
+    })
+  }
+
+  return items
+}
 
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = React.useState("")
 
-  const filteredNavMain = React.useMemo(() => {
-    if (!searchQuery.trim()) return navMain
+  const isAdmin = user?.roles.includes("admin") ?? false
+  const navItems = React.useMemo(() => getNavItems(isAdmin), [isAdmin])
+
+  const filteredNavItems = React.useMemo(() => {
+    if (!searchQuery.trim()) return navItems
 
     const query = searchQuery.toLowerCase()
-    return navMain
+    return navItems
       .map((group) => ({
         ...group,
         items: group.items.filter((item) =>
@@ -75,7 +91,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
         ),
       }))
       .filter((group) => group.items.length > 0)
-  }, [searchQuery])
+  }, [searchQuery, navItems])
 
   async function handleLogout() {
     await authClient.signOut()
@@ -107,7 +123,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
         <form
           onSubmit={(e) => {
             e.preventDefault()
-            const firstItem = filteredNavMain[0]?.items[0]
+            const firstItem = filteredNavItems[0]?.items[0]
             if (firstItem) {
               navigate(firstItem.url)
               setSearchQuery("")
@@ -132,7 +148,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
         </form>
       </SidebarHeader>
       <SidebarContent>
-        {filteredNavMain.map((group) => (
+        {filteredNavItems.map((group) => (
           <SidebarGroup key={group.title}>
             <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
             <SidebarGroupContent>

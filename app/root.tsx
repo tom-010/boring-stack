@@ -13,6 +13,8 @@ import { SidebarProvider, SidebarInset } from "~/components/ui/sidebar";
 import { AppSidebar } from "~/components/app-sidebar";
 import { PageHeader } from "~/components/page-header";
 import { getOptionalSession } from "~/lib/auth.server";
+import { db } from "~/db/client";
+import { parseRoles } from "~/lib/roles";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
@@ -30,8 +32,21 @@ export const links: Route.LinksFunction = () => [
 
 export async function loader({ request }: Route.LoaderArgs) {
   const session = await getOptionalSession(request);
+
+  if (!session?.user) {
+    return { user: null };
+  }
+
+  const dbUser = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { roles: true },
+  });
+
   return {
-    user: session?.user ?? null,
+    user: {
+      ...session.user,
+      roles: parseRoles(dbUser?.roles ?? null),
+    },
   };
 }
 
