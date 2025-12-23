@@ -6,6 +6,7 @@ import { Plus, Pencil } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { TodosTable } from "~/components/todos-table";
 import { db } from "~/db/client";
+import { auth } from "~/lib/auth.server";
 import { getIntent, parseFormDataOrThrow } from "~/lib/forms";
 import {
   updateProjectSchema,
@@ -24,10 +25,13 @@ export const handle: RouteHandle = {
   },
 };
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ params, request }: Route.LoaderArgs) {
   if (!params.id) {
     throw new Response("Not Found", { status: 404 });
   }
+
+  const session = await auth.api.getSession({ headers: request.headers });
+  const userId = session!.user.id;
 
   const projectId = parseInt(params.id);
   const project = await db.project.findUnique({
@@ -39,7 +43,7 @@ export async function loader({ params }: Route.LoaderArgs) {
   }
 
   const projectTodos = await db.todo.findMany({
-    where: { projectId },
+    where: { projectId, userId },
     orderBy: { createdAt: "desc" },
   });
 
@@ -47,6 +51,9 @@ export async function loader({ params }: Route.LoaderArgs) {
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
+  const session = await auth.api.getSession({ headers: request.headers });
+  const userId = session!.user.id;
+
   const formData = await request.formData();
   const intent = getIntent(formData);
   const projectId = parseInt(params.id!);
@@ -77,6 +84,7 @@ export async function action({ request, params }: Route.ActionArgs) {
       await db.todo.create({
         data: {
           projectId,
+          userId,
           title,
           priority,
           completed: false,
@@ -91,7 +99,7 @@ export async function action({ request, params }: Route.ActionArgs) {
         updateTodoSchema
       );
       await db.todo.update({
-        where: { id },
+        where: { id, userId },
         data: {
           ...(completed !== undefined && { completed }),
           ...(priority && { priority }),
@@ -102,7 +110,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
     case "deleteTodo": {
       const { id } = parseFormDataOrThrow(formData, deleteByIdSchema);
-      await db.todo.delete({ where: { id } });
+      await db.todo.delete({ where: { id, userId } });
       return redirect(`/projects/${projectId}`);
     }
 

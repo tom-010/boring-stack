@@ -5,6 +5,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { db } from "~/db/client";
+import { auth } from "~/lib/auth.server";
 import { parseFormDataOrThrow } from "~/lib/forms";
 import { editTodoSchema } from "~/lib/schemas";
 
@@ -23,11 +24,14 @@ export const handle: RouteHandle = {
   },
 };
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ params, request }: Route.LoaderArgs) {
+  const session = await auth.api.getSession({ headers: request.headers });
+  const userId = session!.user.id;
+
   const todoId = parseInt(params.id!);
 
   const todo = await db.todo.findUnique({
-    where: { id: todoId },
+    where: { id: todoId, userId },
   });
 
   if (!todo) {
@@ -46,13 +50,16 @@ export async function loader({ params }: Route.LoaderArgs) {
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
+  const session = await auth.api.getSession({ headers: request.headers });
+  const userId = session!.user.id;
+
   const todoId = parseInt(params.id!);
   const formData = await request.formData();
 
   const data = parseFormDataOrThrow(formData, editTodoSchema);
 
   await db.todo.update({
-    where: { id: todoId },
+    where: { id: todoId, userId },
     data: {
       title: data.title,
       description: data.description || null,

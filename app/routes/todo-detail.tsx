@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { Pencil } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { db } from "~/db/client";
+import { auth } from "~/lib/auth.server";
 
 export const handle: RouteHandle = {
   breadcrumb: (data): BreadcrumbItem[] => {
@@ -19,11 +20,14 @@ export const handle: RouteHandle = {
   },
 };
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ params, request }: Route.LoaderArgs) {
+  const session = await auth.api.getSession({ headers: request.headers });
+  const userId = session!.user.id;
+
   const todoId = parseInt(params.id!);
 
   const todo = await db.todo.findUnique({
-    where: { id: todoId },
+    where: { id: todoId, userId },
   });
 
   if (!todo) {
