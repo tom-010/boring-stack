@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package image;
+
+service ImageService {
+  rpc Resize(ResizeRequest) returns (ResizeResponse);
+}
+
+message ResizeRequest {
+  bytes image_data = 1;
+  int32 width = 2;
+  int32 height = 3;
+}
+
+message ResizeResponse {
+  bytes image_data = 1;
+  string format = 2;
+}
