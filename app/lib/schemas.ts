@@ -74,6 +74,18 @@ export const updateUserSchema = z.object({
 });
 
 // ============================================================================
+// Assignment Schemas
+// ============================================================================
+
+export const assignUserSchema = z.object({
+  userId: z.string().min(1, "User is required"),
+});
+
+export const unassignUserSchema = z.object({
+  assignmentId: z.coerce.number(),
+});
+
+// ============================================================================
 // Type Exports
 // ============================================================================
 
