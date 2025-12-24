@@ -1,26 +1,24 @@
+import logging
+import os
+import sys
 from io import BytesIO
 
 from fastapi import FastAPI, File, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from PIL import Image
 
-from logger import log, lifespan
-
-
-
-
-
-app = FastAPI(title="Image Resize Service", lifespan=lifespan)
+app = FastAPI(title="Image Resize Service")
+log = logging.getLogger("app")
 
 
 @app.get("/hi")
 async def hello():
     """Simple endpoint to verify the service is running."""
-    log.debug("debug message", number=1)
-    log.info("info message", number=2)
-    log.warning("warning message", lnumber=3)
-    log.error("error message", a=4)
-    log.critical("critical message", level="critical", number=5)
+    log.debug("debug message")
+    log.info("info message")
+    log.warning("warning message")
+    log.error("error message")
+    log.critical("critical message")
     return {"message": "Hello, World!"}
 
 
@@ -34,12 +32,7 @@ async def resize_image(
     contents = await file.read()
     image = Image.open(BytesIO(contents))
 
-    log.info(
-        "resizing image",
-        filename=file.filename,
-        original_size=image.size,
-        target_size=(width, height),
-    )
+    log.info(f"resizing {file.filename} from {image.size} to ({width}, {height})")
 
     resized = image.resize((width, height), Image.Resampling.LANCZOS)
 
@@ -55,5 +48,15 @@ async def resize_image(
 if __name__ == "__main__":
     import uvicorn
 
-    log.info("starting server", host="0.0.0.0", port=8001)
+    is_dev = os.environ.get("ENV", "development") == "development"
+    logging.basicConfig(
+        level=logging.DEBUG if is_dev else logging.INFO,
+        format="%(asctime)s %(levelname)-8s %(name)s:%(lineno)d — %(message)s",
+        datefmt="%H:%M:%S" if is_dev else "%Y-%m-%dT%H:%M:%S",
+        stream=sys.stdout,
+        force=True,
+    )
+    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+
+    log.info("starting server on 0.0.0.0:8001")
     uvicorn.run(app, host="0.0.0.0", port=8001)
