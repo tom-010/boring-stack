@@ -22,10 +22,6 @@ export type GreetPersonSchema = {
      * Last Name
      */
     last_name: string;
-    /**
-     * Age
-     */
-    age?: number | null;
 };
 
 /**

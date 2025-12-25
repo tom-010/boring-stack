@@ -11,7 +11,7 @@ const featureFlags = {
 };
 
 function pythonSyncPlugin(): Plugin {
-  const runSync = (label: string) => {
+  const runSync = () => {
     exec("./scripts/sync-py.sh", (error, stdout, stderr) => {
       if (error) {
         console.error("❌ sync-py.sh failed:", stderr);
@@ -25,10 +25,10 @@ function pythonSyncPlugin(): Plugin {
     name: "python-sync",
     configureServer(server) {
       // Run on dev server start
-      runSync("Dev server starting");
+      runSync();
 
       // Watch for changes
-      const debouncedSync = debounce(() => runSync("Python file changed"), 300);
+      const debouncedSync = debounce(() => runSync(), 300);
       server.watcher.add("py/**/*.py");
       server.watcher.on("change", (path) => {
         if (path.endsWith(".py") && path.includes("py/")) {
