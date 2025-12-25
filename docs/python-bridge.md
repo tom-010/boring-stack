@@ -6,6 +6,8 @@ Type-safe RPC between TypeScript and Python.
 
 **Not a REST API.** This is an inter-language RPC bridge — TypeScript calling Python functions with full type safety.
 
+**Server-side only.** Never call Python from the browser. The Python service is internal (localhost:8001), only accessible from loaders/actions.
+
 Think of it as:
 - FFI (Foreign Function Interface) for TypeScript → Python
 - Co-located services that happen to speak HTTP
@@ -26,8 +28,8 @@ The Python service:
 | Path | Purpose |
 |------|---------|
 | `py/` | Python source (FastAPI) |
-| `app/lib/py/` | Generated TypeScript SDK |
 | `app/lib/py/client.ts` | Entry point (import from here) |
+| `app/lib/py/gen/` | Generated SDK (overwritten by sync) |
 | `scripts/sync-py.sh` | Regenerates SDK |
 
 Generated SDK is committed to git (build works without Python, diffs visible in PRs).

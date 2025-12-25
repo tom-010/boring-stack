@@ -75,10 +75,11 @@ Other little ideas:
 
   <pattern name="Python (py/)">
     - **NOT a REST API.** The `py/` folder contains FastAPI code, but this is RPC, not REST. It's inter-language communication — TypeScript calling Python functions with type safety.
+    - **SERVER-SIDE ONLY.** Never call Python from the browser. Only call from loaders/actions. The Python service is internal (localhost:8001), not exposed to clients.
     - **Why:** Python handles compute-heavy tasks (image processing, ML). Same container in prod, 100% coupled to this app.
     - **How types work:** Pydantic models → FastAPI generates OpenAPI → `@hey-api/openapi-ts` generates TypeScript SDK.
-    - **After changing Python:** Run `./scripts/sync-py.sh` to regenerate `app/lib/py/*.gen.ts`.
-    - **Import:** `import { someFunction } from "~/lib/py/client"`
+    - **After changing Python:** Run `./scripts/sync-py.sh` to regenerate `app/lib/py/gen/`.
+    - **Import:** `import { someFunction } from "~/lib/py/client"` (in loaders/actions only)
     - **Details:** See `docs/python-bridge.md`.
   </pattern>
 </architecture>

@@ -16,9 +16,9 @@ cd ..
 echo "Generating TypeScript SDK..."
 npx @hey-api/openapi-ts \
   -i openapi.json \
-  -o ./app/lib/py \
+  -o ./app/lib/py/gen \
   -c @hey-api/client-fetch
 
 rm openapi.json
 
-echo "Done! SDK at ./app/lib/py"
+echo "Done! SDK at ./app/lib/py/gen"
