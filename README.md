@@ -15,25 +15,12 @@ A modern full-stack todo application built with React Router, Drizzle ORM, SQLit
 - ✅ Todo CRUD operations
 - 📖 [React Router docs](https://reactrouter.com/)
 
-## Getting Started
+## Dev Setup
 
-### Installation
-
-Install the dependencies:
-
-```bash
-npm install
-```
-
-### Development
-
-Start the development server with HMR:
-
-```bash
-npm run dev
-```
-
-Your application will be available at `http://localhost:5173`.
+1. `docker compose up -d` — Start Postgres
+2. `npm install --legacy-peer-deps` — Install Node dependencies
+3. `uv sync` (in `py/`) — Install Python dependencies
+4. `npm run dev` — Start Vite, Worker, and Python API
 
 ### Database Management
 
