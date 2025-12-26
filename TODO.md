@@ -3,17 +3,21 @@
 - [x] auth
 - [x] claude.md
 - [ ] testing approach
-- [ ] boring forms
-- [ ] python services and integration
+- [x] boring forms
+- [x] python services and integration
 - [ ] feedback mechanisms (server logs, tests, browser, antigravity?)
 - [x] Simple Observability. KISS!
 - [x] feature flags
 - [x] settings.py
-- [ ] tool: rule of 10
-- [ ] automatic skills and protocols incl. MCPs
 - [ ] a very simple prod deployment
-- [ ] Agent knowledge base
-- [ ] Python Service Cataglog. Service catalog? 
 - [ ] JS always optional?
+- [ ] Auto-fixing build agent (sub-agents)
+
+Augmented Agents
+- [ ] Python Service Catalog. Service catalog? 
+- [ ] Agent knowledge base
+- [ ] automatic skills and protocols incl. MCPs
+
+Supporting Tools
 - [ ] Less tasks for the agent, like auto-fixing stuff
-- [ ] Auto-fixing agent
+- [ ] tool: rule of 10
