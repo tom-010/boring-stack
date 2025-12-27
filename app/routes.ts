@@ -15,6 +15,7 @@ export default [
     index("routes/home.tsx"), // Redirects based on __ENABLE_DASHBOARD__ flag
     route("dashboard", "routes/dashboard.tsx"),
     route("projects", "routes/projects-list.tsx"),
+    route("my-todos", "routes/todos-list.tsx"),
     route("projects/:id", "routes/project-detail.tsx"),
     route("todos/:id", "routes/todo-detail.tsx"),
     route("todos/:id/edit", "routes/todo-edit.tsx"),

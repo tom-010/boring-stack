@@ -131,6 +131,7 @@ Other little ideas:
     - **Verify with curl (functional):** Use `./scripts/curl-auth.sh` as a drop-in curl replacement with automatic auth.
     - **Verify with Chrome (visual):** Use browser for layout, styling, spacing checks.
     - **Debug with logs:** `tail -100 dev.log` for server logs. Prefixes: `[VITE]` for the react router backend, `[PY]` for the python part running in `py/`, `[WORKER]` for the graphile worker. Always tail — the log file grows indefinitely and is very big. Combine the logs with curl and chrome.
+    - Whenever you add something verify that it actually works, either by a unit-test, e2e-test, via curl or chrome. Whatever fits best. Unit-test only if it is a stateless function. E2E test only if it is a core workflow. Chrome only if curl does not work or does not make sense (e.g. checking a position)
   </verification>
 
   <curl_navigation>
@@ -148,14 +149,6 @@ Other little ideas:
     # Extract IDs from HTML
     ./scripts/curl-auth.sh http://localhost:5173/projects/1 2>/dev/null \
       | grep -oP 'name="id" value="\K[0-9]+'
-    ```
-
-    **Form actions use `intent` field:**
-    ```bash
-    -d "intent=createTodo&title=...&priority=medium"
-    -d "intent=updateTodo&id=...&completed=true"
-    -d "intent=deleteTodo&id=..."
-    -d "intent=deleteProject&id=..."
     ```
 
     **Tips:**

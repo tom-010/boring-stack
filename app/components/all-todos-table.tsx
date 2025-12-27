@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Form, Link } from "react-router"
-import { CheckCircle2, Circle, Trash2 } from "lucide-react"
+import { CheckCircle2, Circle } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -20,12 +20,26 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "~/components/ui/pagination"
-import { Button } from "~/components/ui/button"
 import { Badge } from "~/components/ui/badge"
-import type { Todo } from "@prisma/client"
 
-interface TodosTableProps {
-  todos: Todo[]
+interface TodoWithRelations {
+  id: number
+  title: string
+  completed: boolean
+  priority: string | null
+  dueDate: string | null
+  createdAt: Date
+  userId: string
+  project: { id: number; name: string }
+  user: { id: string; name: string }
+  assignments: Array<{
+    user: { id: string; name: string }
+  }>
+}
+
+interface AllTodosTableProps {
+  todos: TodoWithRelations[]
+  currentUserId: string
 }
 
 const ITEMS_PER_PAGE = 10
@@ -36,7 +50,7 @@ const priorityColors: Record<string, string> = {
   high: "bg-red-100 text-red-700",
 }
 
-export function TodosTable({ todos }: TodosTableProps) {
+export function AllTodosTable({ todos, currentUserId }: AllTodosTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
 
   const totalPages = Math.ceil(todos.length / ITEMS_PER_PAGE)
@@ -135,6 +149,16 @@ export function TodosTable({ todos }: TodosTableProps) {
     return items
   }
 
+  const getRelation = (todo: TodoWithRelations) => {
+    if (todo.userId === currentUserId) {
+      return "owner"
+    }
+    if (todo.assignments.some((a) => a.user.id === currentUserId)) {
+      return "assigned"
+    }
+    return null
+  }
+
   return (
     <div className="space-y-4">
       <div className="rounded-lg border">
@@ -144,10 +168,10 @@ export function TodosTable({ todos }: TodosTableProps) {
               <TableHead className="w-12">#</TableHead>
               <TableHead className="w-10"></TableHead>
               <TableHead>Title</TableHead>
+              <TableHead className="hidden md:table-cell">Project</TableHead>
               <TableHead className="hidden md:table-cell">Priority</TableHead>
               <TableHead className="hidden lg:table-cell">Due</TableHead>
               <TableHead className="hidden lg:table-cell">Created</TableHead>
-              <TableHead className="text-right w-20">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -161,97 +185,90 @@ export function TodosTable({ todos }: TodosTableProps) {
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedTodos.map((todo, idx) => (
-                <TableRow key={todo.id}>
-                  <TableCell className="font-medium text-muted-foreground">
-                    {startIndex + idx + 1}
-                  </TableCell>
-                  <TableCell>
-                    <Form method="post" style={{ display: "inline" }}>
-                      <input type="hidden" name="intent" value="updateTodo" />
-                      <input type="hidden" name="id" value={todo.id} />
-                      <input
-                        type="hidden"
-                        name="completed"
-                        value={String(!todo.completed)}
-                      />
-                      <button type="submit" className="cursor-pointer">
-                        {todo.completed ? (
-                          <CheckCircle2 className="h-5 w-5 text-green-500" />
-                        ) : (
-                          <Circle className="h-5 w-5 text-muted-foreground hover:text-green-500" />
-                        )}
-                      </button>
-                    </Form>
-                  </TableCell>
-                  <TableCell>
-                    <Link
-                      to={`/todos/${todo.id}`}
-                      className={`hover:underline font-medium ${
-                        todo.completed
-                          ? "line-through text-muted-foreground"
-                          : ""
-                      }`}
-                    >
-                      {todo.title}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Form method="post" style={{ display: "inline" }}>
-                      <input type="hidden" name="intent" value="updateTodo" />
-                      <input type="hidden" name="id" value={todo.id} />
-                      <input
-                        type="hidden"
-                        name="priority"
-                        value={
-                          todo.priority === "low"
-                            ? "medium"
-                            : todo.priority === "medium"
-                            ? "high"
-                            : "low"
-                        }
-                      />
-                      <button type="submit" className="cursor-pointer">
-                        <Badge
-                          variant="secondary"
-                          className={`${
-                            priorityColors[todo.priority || "medium"] || ""
-                          } hover:opacity-80`}
-                        >
-                          {todo.priority || "medium"}
-                        </Badge>
-                      </button>
-                    </Form>
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
-                    {todo.dueDate || "-"}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
-                    {new Date(todo.createdAt).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Form
-                      method="post"
-                      onSubmit={(e) => {
-                        if (
-                          !window.confirm(
-                            "Are you sure you want to delete this todo?"
-                          )
-                        ) {
-                          e.preventDefault()
-                        }
-                      }}
-                      style={{ display: "inline" }}
-                    >
-                      <input type="hidden" name="intent" value="deleteTodo" />
-                      <input type="hidden" name="id" value={todo.id} />
-                      <Button type="submit" variant="ghost" size="sm">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </Form>
-                  </TableCell>
-                </TableRow>
-              ))
+              paginatedTodos.map((todo, idx) => {
+                const relation = getRelation(todo)
+                return (
+                  <TableRow key={todo.id}>
+                    <TableCell className="font-medium text-muted-foreground">
+                      {startIndex + idx + 1}
+                    </TableCell>
+                    <TableCell>
+                      <Form method="post" style={{ display: "inline" }}>
+                        <input type="hidden" name="intent" value="updateTodo" />
+                        <input type="hidden" name="id" value={todo.id} />
+                        <input
+                          type="hidden"
+                          name="completed"
+                          value={String(!todo.completed)}
+                        />
+                        <button type="submit" className="cursor-pointer">
+                          {todo.completed ? (
+                            <CheckCircle2 className="h-5 w-5 text-green-500" />
+                          ) : (
+                            <Circle className="h-5 w-5 text-muted-foreground hover:text-green-500" />
+                          )}
+                        </button>
+                      </Form>
+                    </TableCell>
+                    <TableCell>
+                      <Link
+                        to={`/todos/${todo.id}`}
+                        className={`hover:underline font-medium ${
+                          todo.completed ? "line-through text-muted-foreground" : ""
+                        }`}
+                      >
+                        {todo.title}
+                      </Link>
+                      {relation === "assigned" && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          (assigned by {todo.user.name})
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Link
+                        to={`/projects/${todo.project.id}`}
+                        className="text-sm text-muted-foreground hover:underline"
+                      >
+                        {todo.project.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Form method="post" style={{ display: "inline" }}>
+                        <input type="hidden" name="intent" value="updateTodo" />
+                        <input type="hidden" name="id" value={todo.id} />
+                        <input
+                          type="hidden"
+                          name="priority"
+                          value={
+                            todo.priority === "low"
+                              ? "medium"
+                              : todo.priority === "medium"
+                              ? "high"
+                              : "low"
+                          }
+                        />
+                        <button type="submit" className="cursor-pointer">
+                          <Badge
+                            variant="secondary"
+                            className={`${
+                              priorityColors[todo.priority || "medium"] || ""
+                            } hover:opacity-80`}
+                          >
+                            {todo.priority || "medium"}
+                          </Badge>
+                        </button>
+                      </Form>
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
+                      {todo.dueDate || "-"}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
+                      {new Date(todo.createdAt).toLocaleDateString()}
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             )}
           </TableBody>
         </Table>
