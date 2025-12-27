@@ -129,6 +129,7 @@ Other little ideas:
     - Assume the app runs on `http://localhost:5173/`. If not, ask the user to start it.
     - **Verify with curl (functional):** Use `./scripts/curl-auth.sh` as a drop-in curl replacement with automatic auth.
     - **Verify with Chrome (visual):** Use browser for layout, styling, spacing checks.
+    - **Debug with logs:** `tail -100 dev.log` for server logs. Prefixes: `[VITE]` for the react router backend, `[PY]` for the python part running in `py/`, `[WORKER]` for the graphile worker. Always tail — the log file grows indefinitely and is very big. Combine the logs with curl and chrome.
   </verification>
 
   <curl_navigation>
