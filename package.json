@@ -12,6 +12,8 @@
     "typecheck": "react-router typegen && tsc",
     "db:generate": "prisma generate",
     "db:migrate": "prisma db push",
+    "db:reset": "prisma db push --force-reset && npx tsx prisma/seed.ts",
+    "db:seed": "npx tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "test": "vitest run",
     "test:watch": "vitest",

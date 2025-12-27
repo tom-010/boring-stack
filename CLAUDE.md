@@ -42,6 +42,7 @@ Other little ideas:
 <architecture>
   <map>
     Database:    ./prisma/schema.prisma
+    Seed Data:   ./prisma/seed.ts (run via `npm run db:seed`)
     DB Client:   ./app/db/client.ts (exports `db`)
     Auth:        ./app/lib/auth.server.ts (BetterAuth + Prisma adapter)
     UI Library:  ./app/components/ui/
@@ -173,7 +174,8 @@ Other little ideas:
   <workflow name="Add a new model">
     1. Add model to `prisma/schema.prisma`
     2. Run `npm run db:migrate` then `npm run db:generate`
-    3. Create route file, add to `routes.ts`
+    3. Update `prisma/seed.ts` with example data for the new model
+    4. Create route file, add to `routes.ts`
   </workflow>
   <workflow name="Add a new page">
     1. Create route file in `app/routes/`

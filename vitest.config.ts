@@ -6,7 +6,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
-    include: ["app/**/*.test.{ts,tsx}"],
+    include: ["app/**/*.test.{ts,tsx}", "prisma/**/*.test.ts"],
     exclude: ["tests/**", "node_modules/**"],
   },
 });
