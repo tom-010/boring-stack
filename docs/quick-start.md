@@ -69,6 +69,11 @@ Visit http://localhost:5173 and login with test credentials.
 
 ---
 
+### 8. Setup Claude
+
+- Install Claude Code Paid Tier
+- Install the Chrome integration 
+
 ## Environment Variables
 
 The `.env` file is pre-configured for local development:

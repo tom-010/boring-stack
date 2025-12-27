@@ -126,6 +126,8 @@ Other little ideas:
 
   <verification>
     - Run `./scripts/lint.sh` after completing changes to catch errors early.
+    - Always assume that the app is running on `http://localhost:5173/`. If not request from the user to start it. 
+      - Verify UI work if you need from there using chrome if it makes sense.
   </verification>
 </coding_standards>
 

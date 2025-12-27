@@ -16,7 +16,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     where: { userId: session.user.id },
   });
 
-  return { todoCount };
+  return { todoCount, userName: session.user.name };
 }
 
 export default function DashboardPage({ loaderData }: Route.ComponentProps) {
@@ -26,6 +26,9 @@ export default function DashboardPage({ loaderData }: Route.ComponentProps) {
     <div className="p-6 md:p-8">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
+          <p className="text-lg text-muted-foreground mb-1">
+            Welcome back, {loaderData.userName || "friend"}!
+          </p>
           <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
           <p className="text-muted-foreground">Your overview at a glance</p>
         </div>

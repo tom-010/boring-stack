@@ -7,3 +7,10 @@ EXIT_CODE=0
 if [ $EXIT_CODE -ne 0 ]; then
     claude --dangerously-skip-permissions "run ./scripts/lint.sh and fix any issues until it works"
 fi
+
+EXIT_CODE=0
+./scripts/test.sh && EXIT_CODE=$? || EXIT_CODE=1
+
+if [ $EXIT_CODE -ne 0 ]; then
+    claude --dangerously-skip-permissions "run ./scripts/test.sh and fix any issues until it works"
+fi
