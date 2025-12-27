@@ -16,8 +16,8 @@ log = logging.getLogger("app")
 
 app = FastAPI(title="Image Resize Service")
 
-# Base path for uploads (configurable via env)
-UPLOADS_BASE = Path(os.getenv("UPLOADS_BASE", "/home/tom/Projects/starter2/public"))
+# Base path for uploads (configurable via env, defaults to ../public relative to this file)
+UPLOADS_BASE = Path(os.getenv("UPLOADS_BASE", str(Path(__file__).parent.parent / "public")))
 
 
 @app.get("/hi")
