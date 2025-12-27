@@ -76,13 +76,13 @@ describe("formDataToObject", () => {
   it("handles empty string values", () => {
     const formData = new FormData();
     formData.append("name", "");
-    formData.append("email", "test@example.com");
+    formData.append("email", "admin@example.com");
 
     const result = formDataToObject(formData);
 
     expect(result).toEqual({
       name: "",
-      email: "test@example.com",
+      email: "admin@example.com",
     });
   });
 

@@ -804,8 +804,8 @@ export default defineConfig({
 ```typescript
 setup("authenticate", async ({ page }) => {
   await page.goto("/login");
-  await page.getByLabel("Email").fill("test@example.com");
-  await page.getByLabel("Password").fill("password123");
+  await page.getByLabel("Email").fill("admin@example.com");
+  await page.getByLabel("Password").fill("admin");
   await page.getByRole("button", { name: "Sign in" }).click();
   await page.context().storageState({ path: "playwright/.auth/user.json" });
 });
@@ -813,7 +813,7 @@ setup("authenticate", async ({ page }) => {
 
 ### Seeder (prisma/seed.ts)
 
-Creates test user: `test@example.com` / `password123` (admin role).
+Creates test user: `admin@example.com` / `admin` (admin role).
 
 ---
 
@@ -821,7 +821,7 @@ Creates test user: `test@example.com` / `password123` (admin role).
 
 ```bash
 npx tsx scripts/manage-users.ts list
-npx tsx scripts/manage-users.ts create user@example.com password123 "John Doe"
+npx tsx scripts/manage-users.ts create user@example.com admin "John Doe"
 npx tsx scripts/manage-users.ts update user@example.com password newpassword
 npx tsx scripts/manage-users.ts update user@example.com name "Jane Doe"
 npx tsx scripts/manage-users.ts delete user@example.com

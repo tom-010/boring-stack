@@ -50,7 +50,7 @@ npm run db:generate   # Generate Prisma client
 npx tsx prisma/seed.ts
 ```
 
-Creates: `test@example.com` / `password123` (admin role)
+Creates: `admin@example.com` / `admin` (admin role)
 
 ### 6. Start Development
 

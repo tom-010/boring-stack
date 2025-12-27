@@ -3,8 +3,8 @@ import { db } from "../app/db/client";
 import { auth } from "../app/lib/auth.server";
 
 const TEST_USER = {
-  email: "test@example.com",
-  password: "password123",
+  email: "admin@example.com",
+  password: "admin",
   name: "Test User",
   roles: JSON.stringify(["admin"]),
 };

@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "rm dev.log ; FORCE_COLOR=1 concurrently --kill-others -n \"VITE,WORKER,PY\" -c \"bgBlue.bold,bgMagenta.bold,bgYellow.bold\" \"npm run dev:vite\" \"npm run dev:worker\" \"npm run dev:py\" 2>&1 | tee dev.log",
+    "dev": "./scripts/dev.sh",
     "dev:vite": "react-router dev",
     "dev:worker": "npx tsx scripts/worker.ts",
     "dev:py": "cd py && uv run python -m uvicorn main:app --reload --host 0.0.0.0 --port 8001",

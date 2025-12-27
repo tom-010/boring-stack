@@ -5,8 +5,8 @@ const authFile = "playwright/.auth/user.json";
 setup("authenticate", async ({ page }) => {
   await page.goto("/login");
 
-  await page.getByLabel("Email").fill("test@example.com");
-  await page.getByLabel("Password").fill("password123");
+  await page.getByLabel("Email").fill("admin@example.com");
+  await page.getByLabel("Password").fill("admin");
   await page.getByRole("button", { name: "Sign in" }).click();
 
   // Wait for redirect away from login (home redirects to /projects or /dashboard)
