@@ -21,15 +21,25 @@ import {
   PaginationPrevious,
 } from "~/components/ui/pagination"
 import { Button } from "~/components/ui/button"
-import type { Project } from "@prisma/client"
+
+interface ProjectWithOwner {
+  id: number
+  name: string
+  description: string | null
+  color: string | null
+  ownerId: string
+  createdAt: Date
+  owner: { id: string; name: string }
+}
 
 interface ProjectsTableProps {
-  projects: Project[]
+  projects: ProjectWithOwner[]
+  currentUserId: string
 }
 
 const ITEMS_PER_PAGE = 10
 
-export function ProjectsTable({ projects }: ProjectsTableProps) {
+export function ProjectsTable({ projects, currentUserId }: ProjectsTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
 
   const totalPages = Math.ceil(projects.length / ITEMS_PER_PAGE)
@@ -153,47 +163,57 @@ export function ProjectsTable({ projects }: ProjectsTableProps) {
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedProjects.map((project, idx) => (
-                <TableRow key={project.id}>
-                  <TableCell className="font-medium text-muted-foreground">
-                    {startIndex + idx + 1}
-                  </TableCell>
-                  <TableCell>
-                    <Link
-                      to={`/projects/${project.id}`}
-                      className="hover:underline font-medium"
-                    >
-                      {project.name}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                    {project.description || "-"}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                    {new Date(project.createdAt).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Form
-                      method="post"
-                      onSubmit={(e) => {
-                        if (!window.confirm("Are you sure you want to delete this project?")) {
-                          e.preventDefault()
-                        }
-                      }}
-                    >
-                      <input type="hidden" name="intent" value="deleteProject" />
-                      <input type="hidden" name="id" value={project.id} />
-                      <Button
-                        type="submit"
-                        variant="ghost"
-                        size="sm"
+              paginatedProjects.map((project, idx) => {
+                const isOwner = project.ownerId === currentUserId
+                return (
+                  <TableRow key={project.id}>
+                    <TableCell className="font-medium text-muted-foreground">
+                      {startIndex + idx + 1}
+                    </TableCell>
+                    <TableCell>
+                      <Link
+                        to={`/projects/${project.id}`}
+                        className="hover:underline font-medium"
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </Form>
-                  </TableCell>
-                </TableRow>
-              ))
+                        {project.name}
+                      </Link>
+                      {!isOwner && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          (by {project.owner.name})
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                      {project.description || "-"}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                      {new Date(project.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {isOwner && (
+                        <Form
+                          method="post"
+                          onSubmit={(e) => {
+                            if (!window.confirm("Are you sure you want to delete this project?")) {
+                              e.preventDefault()
+                            }
+                          }}
+                        >
+                          <input type="hidden" name="intent" value="deleteProject" />
+                          <input type="hidden" name="id" value={project.id} />
+                          <Button
+                            type="submit"
+                            variant="ghost"
+                            size="sm"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </Form>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             )}
           </TableBody>
         </Table>

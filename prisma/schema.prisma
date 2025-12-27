@@ -11,8 +11,10 @@ model Project {
   name        String
   description String?
   color       String?  @default("blue")
+  ownerId     String   @map("owner_id")
   createdAt   DateTime @default(now()) @map("created_at")
   todos       Todo[]
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@map("projects")
 }
@@ -81,6 +83,7 @@ model User {
   attachments   Attachment[]
   assignedTodos TodoAssignment[] @relation("AssignedTodos")
   assignedBy    TodoAssignment[] @relation("AssignedByUser")
+  projects      Project[]
 
   @@map("users")
 }

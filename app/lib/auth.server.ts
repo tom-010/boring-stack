@@ -15,6 +15,11 @@ export const auth = betterAuth({
     enabled: true,
     disableSignUp: true,
   },
+  advanced: {
+    defaultCookieAttributes: {
+      sameSite: "lax",
+    },
+  },
 });
 
 // Legacy helper - prefer middleware in _protected.tsx for route protection

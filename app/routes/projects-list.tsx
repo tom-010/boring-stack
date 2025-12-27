@@ -5,6 +5,7 @@ import { Plus, Folder } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { ProjectsTable } from "~/components/projects-table";
 import { db } from "~/db/client";
+import { auth } from "~/lib/auth.server";
 import { getIntent, parseFormDataOrThrow } from "~/lib/forms";
 import { createProjectSchema, deleteByIdSchema } from "~/lib/schemas";
 import { log } from "~/lib/logger.server";
@@ -13,19 +14,47 @@ export const handle: RouteHandle = {
   breadcrumb: { label: "Projects", href: "/projects" },
 };
 
-export async function loader() {
-  const projects = await db.project.findMany();
-  return { projects };
+export async function loader({ request }: Route.LoaderArgs) {
+  const session = await auth.api.getSession({ headers: request.headers });
+  const userId = session!.user.id;
+
+  // Get projects I own OR where I'm assigned to a todo
+  const projects = await db.project.findMany({
+    where: {
+      OR: [
+        { ownerId: userId },
+        {
+          todos: {
+            some: {
+              assignments: {
+                some: { userId },
+              },
+            },
+          },
+        },
+      ],
+    },
+    include: {
+      owner: { select: { id: true, name: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return { projects, currentUserId: userId };
 }
 
 export async function action({ request }: Route.ActionArgs) {
+  const session = await auth.api.getSession({ headers: request.headers });
+  const userId = session!.user.id;
+
   const formData = await request.formData();
   const intent = getIntent(formData);
 
   switch (intent) {
     case "deleteProject": {
       const { id } = parseFormDataOrThrow(formData, deleteByIdSchema);
-      await db.project.delete({ where: { id } });
+      // Only allow deleting own projects
+      await db.project.delete({ where: { id, ownerId: userId } });
       log.info({ projectId: id }, "project_deleted");
       return redirect("/projects");
     }
@@ -38,7 +67,7 @@ export async function action({ request }: Route.ActionArgs) {
       const color = (formData.get("color") as string) || "blue";
 
       const project = await db.project.create({
-        data: { name, color, description },
+        data: { name, color, description, ownerId: userId },
       });
       log.info({ projectId: project.id, name }, "project_created");
 
@@ -86,7 +115,10 @@ export default function ProjectsPage({ loaderData }: Route.ComponentProps) {
             <p className="text-lg">No projects yet. Create one to get started!</p>
           </div>
         ) : (
-          <ProjectsTable projects={loaderData.projects} />
+          <ProjectsTable
+            projects={loaderData.projects}
+            currentUserId={loaderData.currentUserId}
+          />
         )}
       </div>
     </div>
