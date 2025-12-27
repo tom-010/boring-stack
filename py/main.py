@@ -2,14 +2,15 @@ import logging
 import os
 from io import BytesIO
 from pathlib import Path
+
 from logger import init_logging
+
 init_logging()
 
 from fastapi import FastAPI, File, Query, UploadFile
-from pydantic import BaseModel
 from fastapi.responses import StreamingResponse
 from PIL import Image
-
+from pydantic import BaseModel
 
 log = logging.getLogger("app")
 
@@ -29,9 +30,11 @@ async def hello():
     log.critical("critical message")
     return {"message": "Hello, World!"}
 
+
 class GreetPersonSchema(BaseModel):
     first_name: str
     last_name: str
+
 
 @app.post("/greet")
 async def greet_person(person: GreetPersonSchema):
@@ -39,6 +42,7 @@ async def greet_person(person: GreetPersonSchema):
     greeting = f"Hello, {person.first_name} {person.last_name}!"
     log.info(f"Greeting generated: {greeting}")
     return {"greeting": greeting}
+
 
 @app.post("/resize")
 async def resize_image(
@@ -68,8 +72,10 @@ class GenerateThumbnailRequest(BaseModel):
     width: int = 200
     height: int = 200
 
+
 class GenerateThumbnailResponse(BaseModel):
     thumbnail_path: str  # e.g., "/uploads/thumbnails/thumb-123-file.jpg"
+
 
 @app.post("/generate-thumbnail")
 async def generate_thumbnail(request: GenerateThumbnailRequest) -> GenerateThumbnailResponse:

@@ -36,6 +36,7 @@ Other little ideas:
   <cmd name="ui:add" description="Install component">npx shadcn@latest add</cmd>
   <cmd name="py:sync" description="Regenerate Python SDK">./scripts/sync-py.sh</cmd>
   <cmd name="py:dev" description="Start Python service">cd py && uv run python main.py</cmd>
+  <cmd name="lint" description="Lint and auto-fix TS + Python">npm run lint</cmd>
 </commands>
 
 <architecture>
@@ -124,7 +125,7 @@ Other little ideas:
   </negative_constraints>
 
   <verification>
-    - Run `npm run typecheck` after completing changes to catch errors early.
+    - Run `./scripts/lint.sh` after completing changes to catch errors early.
   </verification>
 </coding_standards>
 

@@ -10,3 +10,32 @@ dependencies = [
     "python-multipart>=0.0.21",
     "uvicorn>=0.40.0",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.10",
+]
+
+[tool.ruff]
+line-length = 120  # Don't be pedantic about line length
+exclude = [".venv"]
+
+[tool.ruff.lint]
+select = [
+    "F",      # Pyflakes - unused imports, undefined names
+    "E",      # pycodestyle errors - only real errors
+    "W",      # pycodestyle warnings - only real warnings
+    "I",      # isort - import sorting
+    "UP",     # pyupgrade - modernize syntax
+    "B",      # flake8-bugbear - likely bugs
+    "SIM",    # flake8-simplify - simplifications
+]
+ignore = [
+    "E501",   # Line too long - handled by formatter, not linter
+    "E402",   # Module import not at top - sometimes needed (e.g., logging init)
+    "E731",   # Lambda assignment - sometimes useful
+    "B008",   # Function call in default arg - common in FastAPI
+]
+
+[tool.ruff.format]
+quote-style = "double"

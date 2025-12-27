@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 
+
 def init_logging():
     # Logging setup
     is_dev = os.environ.get("ENV", "development") == "development"
@@ -13,4 +14,3 @@ def init_logging():
         force=True,
     )
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
-
