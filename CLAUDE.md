@@ -126,9 +126,40 @@ Other little ideas:
 
   <verification>
     - Run `./scripts/lint.sh` after completing changes to catch errors early.
-    - Always assume that the app is running on `http://localhost:5173/`. If not request from the user to start it. 
-      - Verify UI work if you need from there using chrome if it makes sense.
+    - Assume the app runs on `http://localhost:5173/`. If not, ask the user to start it.
+    - **Verify with curl (functional):** Use `./scripts/curl-auth.sh` as a drop-in curl replacement with automatic auth.
+    - **Verify with Chrome (visual):** Use browser for layout, styling, spacing checks.
   </verification>
+
+  <curl_navigation>
+    Use `./scripts/curl-auth.sh` to test routes and form submissions without a browser.
+
+    **Patterns:**
+    ```bash
+    # GET a page
+    ./scripts/curl-auth.sh http://localhost:5173/projects
+
+    # POST and get redirect location
+    ./scripts/curl-auth.sh -X POST http://localhost:5173/projects \
+      -d "name=Test" -D - -o /dev/null 2>&1 | grep -i location
+
+    # Extract IDs from HTML
+    ./scripts/curl-auth.sh http://localhost:5173/projects/1 2>/dev/null \
+      | grep -oP 'name="id" value="\K[0-9]+'
+    ```
+
+    **Form actions use `intent` field:**
+    ```bash
+    -d "intent=createTodo&title=...&priority=medium"
+    -d "intent=updateTodo&id=...&completed=true"
+    -d "intent=deleteTodo&id=..."
+    -d "intent=deleteProject&id=..."
+    ```
+
+    **Tips:**
+    - Use `2>/dev/null` to suppress curl progress output
+    - Use `-D - -o /dev/null` to get only response headers
+  </curl_navigation>
 </coding_standards>
 
 <orientation>
