@@ -1,6 +1,6 @@
 import * as React from "react"
 import { Link, useLocation, useNavigate } from "react-router"
-import { CheckSquare2, Folder, Settings, Users, FileText, BarChart3, HelpCircle, LogOut, ChevronsUpDown, Search, LayoutDashboard, Bug, ListChecks } from "lucide-react"
+import { CheckSquare2, Folder, Users, LogOut, ChevronsUpDown, Search, LayoutDashboard, Bug, ListChecks } from "lucide-react"
 
 import {
   Sidebar,
@@ -45,8 +45,6 @@ function getNavItems(isAdmin: boolean) {
   const workspaceItems = [
     { title: "Projects", url: "/projects", icon: Folder },
     { title: "My Todos", url: "/my-todos", icon: ListChecks },
-    { title: "Team", url: "#", icon: Users },
-    { title: "Reports", url: "#", icon: BarChart3 },
   ]
 
   if (__ENABLE_DASHBOARD__) {
@@ -57,14 +55,6 @@ function getNavItems(isAdmin: boolean) {
     {
       title: "Workspace",
       items: workspaceItems,
-    },
-    {
-      title: "Organization",
-      items: [
-        { title: "Settings", url: "#", icon: Settings },
-        { title: "Documentation", url: "#", icon: FileText },
-        { title: "Help", url: "#", icon: HelpCircle },
-      ],
     },
   ]
 
