@@ -42,7 +42,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@react-router/node": "^7.10.1",
     "@react-router/serve": "^7.10.1",
-    "better-auth": "^1.4.7",
+    "better-auth": "^1.4.10",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
