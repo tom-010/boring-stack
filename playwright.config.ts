@@ -36,7 +36,7 @@ export default defineConfig({
     },
     {
       command: "npm run dev:py",
-      url: "http://localhost:8001/hi",
+      url: "http://localhost:8123/hi",
       reuseExistingServer: !process.env.CI,
     },
   ],

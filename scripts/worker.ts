@@ -11,7 +11,7 @@ const db = new PrismaClient({ adapter });
 
 // Configure Python service client for the worker
 const pyClient = createClient({
-  baseUrl: process.env.PY_URL ?? "http://localhost:8001",
+  baseUrl: process.env.PY_URL ?? "http://localhost:8123",
 });
 
 interface GenerateThumbnailPayload {

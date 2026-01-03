@@ -132,5 +132,5 @@ async def generate_thumbnail(request: GenerateThumbnailRequest) -> GenerateThumb
 if __name__ == "__main__":
     import uvicorn
 
-    log.info("starting server on 0.0.0.0:8001")
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    log.info("starting server on 0.0.0.0:8123")
+    uvicorn.run(app, host="0.0.0.0", port=8123)

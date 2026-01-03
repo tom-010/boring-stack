@@ -387,7 +387,7 @@ npm run dev
 Runs three processes:
 - **VITE**: React Router dev server (http://localhost:5173)
 - **WORKER**: Graphile Worker for background jobs
-- **PY**: Python FastAPI service (http://localhost:8001)
+- **PY**: Python FastAPI service (http://localhost:8123)
 
 ### 7. Open App
 
@@ -490,7 +490,7 @@ cd py && uv sync  # Install Python deps
 ```bash
 # Check what's using ports
 lsof -i :5173
-lsof -i :8001
+lsof -i :8123
 lsof -i :5432
 ```
 
@@ -600,7 +600,7 @@ Key scripts:
     "dev": "concurrently \"npm run dev:vite\" \"npm run dev:worker\" \"npm run dev:py\"",
     "dev:vite": "react-router dev",
     "dev:worker": "npx tsx scripts/worker.ts",
-    "dev:py": "cd py && uv run python -m uvicorn main:app --reload --host 0.0.0.0 --port 8001",
+    "dev:py": "cd py && uv run python -m uvicorn main:app --reload --host 0.0.0.0 --port 8123",
     "build": "react-router build",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
@@ -1193,8 +1193,8 @@ import { client } from "./gen/client.gen";
 export * from "./gen/sdk.gen";
 
 const PY_URL = typeof window === "undefined"
-  ? process.env.PY_URL ?? "http://localhost:8001"
-  : "http://localhost:8001";
+  ? process.env.PY_URL ?? "http://localhost:8123"
+  : "http://localhost:8123";
 
 client.setConfig({
   baseUrl: PY_URL,
@@ -1302,7 +1302,7 @@ export default defineConfig({
   ],
   webServer: [
     { command: "npm run dev:vite", url: "http://localhost:5173" },
-    { command: "npm run dev:py", url: "http://localhost:8001/hi" },
+    { command: "npm run dev:py", url: "http://localhost:8123/hi" },
   ],
 });
 ```
@@ -1877,7 +1877,7 @@ Type-safe RPC between TypeScript and Python.
 
 **Not a REST API.** This is an inter-language RPC bridge — TypeScript calling Python functions with full type safety.
 
-**Server-side only.** Never call Python from the browser. The Python service is internal (localhost:8001), only accessible from loaders/actions.
+**Server-side only.** Never call Python from the browser. The Python service is internal (localhost:8123), only accessible from loaders/actions.
 
 Think of it as:
 - FFI (Foreign Function Interface) for TypeScript → Python
@@ -1940,7 +1940,7 @@ const result = await greetPersonGreetPost({
 ## Running
 
 ```bash
-cd py && uv run python main.py  # Port 8001
+cd py && uv run python main.py  # Port 8123
 ```
 
 ## Why OpenAPI?

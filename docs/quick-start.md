@@ -61,7 +61,7 @@ npm run dev
 Runs three processes:
 - **VITE**: React Router dev server (http://localhost:5173)
 - **WORKER**: Graphile Worker for background jobs
-- **PY**: Python FastAPI service (http://localhost:8001)
+- **PY**: Python FastAPI service (http://localhost:8123)
 
 ### 7. Open App
 
@@ -169,7 +169,7 @@ cd py && uv sync  # Install Python deps
 ```bash
 # Check what's using ports
 lsof -i :5173
-lsof -i :8001
+lsof -i :8123
 lsof -i :5432
 ```
 

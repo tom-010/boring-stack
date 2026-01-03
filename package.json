@@ -3,10 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "./scripts/dev.sh",
+    "dev": "npm run dev:db && npm run dev:start",
+    "dev:start": "npm run dev:wait-for-db && npm run db:migrate && ./scripts/dev.sh",
+    "dev:db": "docker compose up -d",
+    "dev:wait-for-db": "npx tsx scripts/wait-for-db.ts",
     "dev:vite": "react-router dev",
     "dev:worker": "npx tsx scripts/worker.ts",
-    "dev:py": "cd py && uv run python -m uvicorn main:app --reload --host 0.0.0.0 --port 8001",
+    "dev:py": "cd py && uv run python -m uvicorn main:app --reload --host 0.0.0.0 --port 8123",
     "build": "react-router build",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
@@ -19,7 +22,8 @@
     "test:watch": "vitest",
     "test:e2e": "npx tsx prisma/seed.ts && playwright test",
     "test:e2e:ui": "npx tsx prisma/seed.ts && playwright test --ui",
-    "lint": "./scripts/lint.sh"
+    "lint": "./scripts/lint.sh",
+    "health": "npx tsx scripts/health-check.ts"
   },
   "dependencies": {
     "@conform-to/react": "^1.15.0",

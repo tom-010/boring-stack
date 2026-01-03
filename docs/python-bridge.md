@@ -6,7 +6,7 @@ Type-safe RPC between TypeScript and Python.
 
 **Not a REST API.** This is an inter-language RPC bridge — TypeScript calling Python functions with full type safety.
 
-**Server-side only.** Never call Python from the browser. The Python service is internal (localhost:8001), only accessible from loaders/actions.
+**Server-side only.** Never call Python from the browser. The Python service is internal (localhost:8123), only accessible from loaders/actions.
 
 Think of it as:
 - FFI (Foreign Function Interface) for TypeScript → Python
@@ -69,7 +69,7 @@ const result = await greetPersonGreetPost({
 ## Running
 
 ```bash
-cd py && uv run python main.py  # Port 8001
+cd py && uv run python main.py  # Port 8123
 ```
 
 ## Why OpenAPI?

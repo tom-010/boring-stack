@@ -92,7 +92,7 @@ Key scripts:
     "dev": "concurrently \"npm run dev:vite\" \"npm run dev:worker\" \"npm run dev:py\"",
     "dev:vite": "react-router dev",
     "dev:worker": "npx tsx scripts/worker.ts",
-    "dev:py": "cd py && uv run python -m uvicorn main:app --reload --host 0.0.0.0 --port 8001",
+    "dev:py": "cd py && uv run python -m uvicorn main:app --reload --host 0.0.0.0 --port 8123",
     "build": "react-router build",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
@@ -685,8 +685,8 @@ import { client } from "./gen/client.gen";
 export * from "./gen/sdk.gen";
 
 const PY_URL = typeof window === "undefined"
-  ? process.env.PY_URL ?? "http://localhost:8001"
-  : "http://localhost:8001";
+  ? process.env.PY_URL ?? "http://localhost:8123"
+  : "http://localhost:8123";
 
 client.setConfig({
   baseUrl: PY_URL,
@@ -794,7 +794,7 @@ export default defineConfig({
   ],
   webServer: [
     { command: "npm run dev:vite", url: "http://localhost:5173" },
-    { command: "npm run dev:py", url: "http://localhost:8001/hi" },
+    { command: "npm run dev:py", url: "http://localhost:8123/hi" },
   ],
 });
 ```
