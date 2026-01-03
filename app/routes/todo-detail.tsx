@@ -77,7 +77,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   }
 
   // Get all users for assignment (exclude owner, max 100)
-  const assignedUserIds = todo.assignments.map((a) => a.userId);
+  const assignedUserIds = todo.assignments.map((a: typeof todo.assignments[number]) => a.userId);
   const allUsers = await db.user.findMany({
     where: {
       id: { notIn: [todo.userId] },
@@ -261,7 +261,7 @@ export default function TodoDetailPage({ loaderData }: Route.ComponentProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const filteredUsers = allUsers.filter(
-    (user) =>
+    (user: typeof allUsers[number]) =>
       !assignedUserIds.includes(user.id) &&
       (user.name.toLowerCase().includes(search.toLowerCase()) ||
         user.email.toLowerCase().includes(search.toLowerCase()))
@@ -351,7 +351,7 @@ export default function TodoDetailPage({ loaderData }: Route.ComponentProps) {
                           No users found
                         </p>
                       ) : (
-                        filteredUsers.map((user) => (
+                        filteredUsers.map((user: typeof filteredUsers[number]) => (
                           <Form
                             key={user.id}
                             method="post"
@@ -391,7 +391,7 @@ export default function TodoDetailPage({ loaderData }: Route.ComponentProps) {
 
           {todo.assignments.length > 0 ? (
             <div className="space-y-2">
-              {todo.assignments.map((assignment) => (
+              {todo.assignments.map((assignment: typeof todo.assignments[number]) => (
                 <div
                   key={assignment.id}
                   className="flex items-center justify-between py-2 px-3 bg-muted rounded-md"
@@ -439,7 +439,7 @@ export default function TodoDetailPage({ loaderData }: Route.ComponentProps) {
 
           {todo.attachments.length > 0 && (
             <div className="space-y-2 mb-4">
-              {todo.attachments.map((attachment) => (
+              {todo.attachments.map((attachment: typeof todo.attachments[number]) => (
                 <div
                   key={attachment.id}
                   className="flex items-center justify-between py-2 px-3 bg-muted rounded-md"

@@ -33,7 +33,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   });
 
   return {
-    users: users.map((u) => ({ ...u, roles: parseRoles(u.roles) })),
+    users: users.map((u: typeof users[number]) => ({ ...u, roles: parseRoles(u.roles) })),
   };
 }
 

@@ -17,11 +17,12 @@ Value Follows a Power Law; Imperfection is Economic. The majority of utility der
 Other little ideas:
 - The URL is the Source of Truth. The Database is the State. The Client is just a View. No API Layer, no client state like redux, no loading spinners.
 - Co-location is king: Put things together, best in a single file.
-- No magic. E.g. route.ts over file-system based routing. 
+- No magic. E.g. route.ts over file-system based routing.
 - Keep things simple. E.g. no own caching layer.
 - Design for 10 users or less
 - Types are your friend as they provide fast feedback for fast iterations.
 - The Programmers Time, Brain-Capacity and Happyness are the most important resource.
+- Logging: Unix philosophy. Silent on success, stderr on error. No emojis, no "cute" messages.
 <princples>
 
 <>

@@ -26,8 +26,8 @@ describe("seed", () => {
     });
 
     expect(projects).toHaveLength(2);
-    expect(projects.map((p) => p.name)).toContain("Website Redesign");
-    expect(projects.map((p) => p.name)).toContain("Mobile App");
+    expect(projects.map((p: typeof projects[number]) => p.name)).toContain("Website Redesign");
+    expect(projects.map((p: typeof projects[number]) => p.name)).toContain("Mobile App");
   });
 
   it("creates 2 todos in first project with correct state", async () => {
@@ -38,8 +38,8 @@ describe("seed", () => {
 
     expect(project?.todos).toHaveLength(2);
 
-    const completedTodo = project?.todos.find((t) => t.completed);
-    const pendingTodo = project?.todos.find((t) => !t.completed);
+    const completedTodo = project?.todos.find((t: (typeof project.todos)[number]) => t.completed);
+    const pendingTodo = project?.todos.find((t: (typeof project.todos)[number]) => !t.completed);
 
     expect(completedTodo).toBeDefined();
     expect(completedTodo?.title).toBe("Design mockups");

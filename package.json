@@ -23,7 +23,8 @@
     "test:e2e": "npx tsx prisma/seed.ts && playwright test",
     "test:e2e:ui": "npx tsx prisma/seed.ts && playwright test --ui",
     "lint": "./scripts/lint.sh",
-    "health": "npx tsx scripts/health-check.ts"
+    "health": "npx tsx scripts/health-check.ts",
+    "verify:routes": "npx tsx scripts/verify-routes.ts"
   },
   "dependencies": {
     "@conform-to/react": "^1.15.0",

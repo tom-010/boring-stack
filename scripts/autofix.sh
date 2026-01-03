@@ -2,6 +2,13 @@
 # run claude to fix any issues
 
 EXIT_CODE=0
+npm run verify:routes && EXIT_CODE=$? || EXIT_CODE=1
+
+if [ $EXIT_CODE -ne 0 ]; then
+    claude --dangerously-skip-permissions "run npm run verify:routes and fix any issues until it works"
+fi
+
+EXIT_CODE=0
 ./scripts/lint.sh && EXIT_CODE=$? || EXIT_CODE=1
 
 if [ $EXIT_CODE -ne 0 ]; then

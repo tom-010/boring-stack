@@ -22,7 +22,7 @@ import {
 } from "~/components/ui/pagination"
 import { Button } from "~/components/ui/button"
 import { Badge } from "~/components/ui/badge"
-import type { Todo } from "@prisma/client"
+import type { Todo } from "~/db/client"
 
 interface TodosTableProps {
   todos: Todo[]

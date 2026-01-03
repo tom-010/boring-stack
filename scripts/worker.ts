@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { run, type Task, type TaskList } from "graphile-worker";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../node_modules/.prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { createClient } from "@hey-api/client-fetch";
 import { generateThumbnailGenerateThumbnailPost } from "../app/lib/py/gen/sdk.gen";

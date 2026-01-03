@@ -132,7 +132,7 @@ export default function ProjectDetailPage({
   loaderData,
 }: Route.ComponentProps) {
   const { project, todos } = loaderData;
-  const completedCount = todos.filter((t) => t.completed).length;
+  const completedCount = todos.filter((t: typeof todos[number]) => t.completed).length;
   const inputRef = useRef<HTMLInputElement>(null);
   const [editing, setEditing] = useState(false);
 
