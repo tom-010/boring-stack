@@ -20,12 +20,13 @@ export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const query = url.searchParams.get("q")?.trim();
 
-  // Build search condition
+  // Build search condition (case-insensitive partial match)
   const searchCondition = query
     ? {
         OR: [
-          { title: { search: query.split(/\s+/).join(" & ") } },
-          { description: { search: query.split(/\s+/).join(" & ") } },
+          { title: { contains: query, mode: "insensitive" as const } },
+          { description: { contains: query, mode: "insensitive" as const } },
+          { project: { name: { contains: query, mode: "insensitive" as const } } },
         ],
       }
     : {};
