@@ -1,25 +1,172 @@
-- id: dashboard
-  name: Dashboard 
-  description: Shows some stats about the application and acts as landing-page.
+- id: login
+  name: Login
+  description: Authentication page for signing into the application.
+  route: /login
   show:
-    - How many todos are assigned to the user
-    - How many todos are completed
+    - Email input field
+    - Password input field
+    - Sign in button
+    - Error message if credentials are invalid
   actions:
-    - Clicking on the todo-panel brings me to the todos
+    - Enter email and password to authenticate
+    - Submit form to sign in
+  links_to:
+    - dashboard
 
-- id: todos
+- id: dashboard
+  name: Dashboard
+  description: Shows some stats about the application and acts as landing-page.
+  route: /dashboard
+  show:
+    - Welcome message with user name
+    - Card showing total todo count for the user
+  actions:
+    - Clicking on the todo panel brings me to the todos
+  links_to:
+    - my-todos
+
+- id: projects
+  name: Projects
+  description: Lists all projects the user owns or is assigned to.
+  route: /projects
+  show:
+    - Projects table with project name and owner
+    - Search input to filter projects
+    - Quick create input for new project
+    - Empty state when no projects exist
+  actions:
+    - Create a new project via inline form
+    - Search projects by name or description
+    - Click on a project row to view details
+    - Delete a project from the table (owner only)
+  links_to:
+    - project-detail
+
+- id: project-detail
+  name: Project Detail
+  description: Shows a single project with its todos.
+  route: /projects/:id
+  show:
+    - Project name (editable inline)
+    - Project description
+    - Todos table with title, status, priority
+    - Completed count summary
+  actions:
+    - Edit project name and description inline
+    - Create a new todo via inline form
+    - Toggle todo completion status
+    - Change todo priority
+    - Delete a todo
+    - Delete the project
+  links_to:
+    - todo-detail
+    - todo-edit
+    - projects
+
+- id: my-todos
   name: Todo List
   description: Shows all my todos across all projects in a table.
-  display:
-    - My todos across all projects
-    - In the table there is the todo name, status, priority
-    - High priority, and low priority should be visually distinct. Low in non fat font as name, high the row should get a light grey background.
-    - Show only the name of the todo, not the description and make a clear checkmark in the first column
+  route: /my-todos
+  show:
+    - Todos table with name, status, priority
+    - High priority rows have light grey background
+    - Low priority rows have normal font weight
+    - Checkmark column for completion status
   actions:
-    - I can toggle a todo directly in the table
-    - There is a edit button for each todo
-    - There is a create button above the table
-    - When clicking on the priority badge it should cycle through the states which are low, medium, high
-    - I want to be able to delete a todo from the row directly, but only in a more dropdown menu
-    - In every todo row, there should be a copy button, which copies the todo name
-    - There is a copy button above the table, which copies all todos currently displayed as CSV to the clipboard
+    - Toggle a todo directly in the table
+    - Edit button for each todo
+    - Create button above the table
+    - Click priority badge to cycle through low/medium/high
+    - Delete todo from row dropdown menu
+    - Copy button to copy todo name
+    - Copy all button to export displayed todos as CSV
+  links_to:
+    - todo-detail
+    - todo-edit
+
+- id: todo-detail
+  name: Todo Detail
+  description: Shows details of a single todo with attachments and assignments.
+  route: /todos/:id
+  show:
+    - Todo title and description
+    - Status (completed/pending)
+    - Priority
+    - Project name
+    - Owner
+    - Due date (if set)
+    - Created date
+    - Assigned users list
+    - Attachments list with thumbnails for images
+  actions:
+    - Edit button to go to edit page (owner only)
+    - Assign users via dialog (owner only)
+    - Unassign users (owner only)
+    - Upload attachments (max 10MB)
+    - Delete attachments (owner or uploader)
+  links_to:
+    - todo-edit
+    - project-detail
+
+- id: todo-edit
+  name: Todo Edit
+  description: Form to edit todo details.
+  route: /todos/:id/edit
+  show:
+    - Title input
+    - Description textarea
+    - Priority dropdown (low/medium/high)
+    - Due date picker
+    - Completed checkbox
+  actions:
+    - Save changes
+    - Cancel to return to detail page
+  links_to:
+    - todo-detail
+
+- id: admin-users
+  name: User Management
+  description: Admin page to manage user accounts and roles.
+  route: /admin/users
+  show:
+    - Users table with name, email, roles, created date
+    - Add User button
+    - Empty state when no users exist
+  actions:
+    - Add a new user
+    - Edit a user
+    - Delete a user (cannot delete self)
+  links_to:
+    - admin-user-new
+    - admin-user-edit
+
+- id: admin-user-new
+  name: New User
+  description: Form to create a new user account.
+  route: /admin/users/new
+  show:
+    - Name input
+    - Email input
+    - Password input
+    - Roles checkboxes (user, admin)
+  actions:
+    - Create user
+    - Cancel to return to user list
+  links_to:
+    - admin-users
+
+- id: admin-user-edit
+  name: Edit User
+  description: Form to edit an existing user account.
+  route: /admin/users/:id/edit
+  show:
+    - Name input (pre-filled)
+    - Email input (pre-filled)
+    - Password input (optional, leave blank to keep)
+    - Roles checkboxes (pre-selected)
+  actions:
+    - Save changes
+    - Cancel to return to user list
+    - Cannot remove own admin role
+  links_to:
+    - admin-users
