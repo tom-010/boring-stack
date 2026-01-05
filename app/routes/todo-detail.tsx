@@ -29,7 +29,7 @@ export const handle: RouteHandle = {
   breadcrumb: (data): BreadcrumbItem[] => {
     const { todo, project } = data as {
       todo: { title: string };
-      project: { id: number; name: string };
+      project: { id: string; name: string };
     };
     return [
       { label: "Projects", href: "/" },
@@ -43,7 +43,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const session = await auth.api.getSession({ headers: request.headers });
   const userId = session!.user.id;
 
-  const todoId = parseInt(params.id!);
+  const todoId = params.id!;
 
   // Check if user owns or is assigned to this todo
   const todo = await db.todo.findFirst({
@@ -102,7 +102,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 export async function action({ request, params }: Route.ActionArgs) {
   const session = await auth.api.getSession({ headers: request.headers });
   const userId = session!.user.id;
-  const todoId = parseInt(params.id!);
+  const todoId = params.id!;
 
   // Verify access
   const todo = await db.todo.findFirst({

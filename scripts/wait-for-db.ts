@@ -5,6 +5,7 @@ const delay = 500;
 
 async function waitForDb() {
   const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+  return
 
   for (let i = 0; i < maxAttempts; i++) {
     try {

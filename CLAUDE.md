@@ -136,6 +136,7 @@ Other little ideas:
 
   <verification>
     - Run `./scripts/lint.sh` after completing changes to catch errors early.
+    - Run `npx tsx ./scripts/check-routes.ts` after modifying routes to verify all routes return 200.
     - Assume the app runs on `http://localhost:5173/`. If not, ask the user to start it.
     - **Verify with curl (functional):** Use `./scripts/curl-auth.sh` as a drop-in curl replacement with automatic auth.
     - **Verify with Chrome (visual):** Use browser for layout, styling, spacing checks.

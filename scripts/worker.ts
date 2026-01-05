@@ -15,7 +15,7 @@ const pyClient = createClient({
 });
 
 interface GenerateThumbnailPayload {
-  attachmentId: number;
+  attachmentId: string;
   filepath: string;
 }
 

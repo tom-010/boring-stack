@@ -26,7 +26,7 @@ export const createTodoSchema = z.object({
 });
 
 export const updateTodoSchema = z.object({
-  id: z.coerce.number(),
+  id: z.string(),
   completed: z
     .string()
     .transform((v) => v === "true")
@@ -44,7 +44,7 @@ export const editTodoSchema = z.object({
 
 // Generic schema for delete operations (just needs an id)
 export const deleteByIdSchema = z.object({
-  id: z.coerce.number(),
+  id: z.string(),
 });
 
 export const deleteByStringIdSchema = z.object({
@@ -82,7 +82,7 @@ export const assignUserSchema = z.object({
 });
 
 export const unassignUserSchema = z.object({
-  assignmentId: z.coerce.number(),
+  assignmentId: z.string(),
 });
 
 // ============================================================================

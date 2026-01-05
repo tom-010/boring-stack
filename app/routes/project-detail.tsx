@@ -34,7 +34,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const session = await auth.api.getSession({ headers: request.headers });
   const userId = session!.user.id;
 
-  const projectId = parseInt(params.id);
+  const projectId = params.id;
   const project = await db.project.findUnique({
     where: { id: projectId },
   });
@@ -57,7 +57,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   const formData = await request.formData();
   const intent = getIntent(formData);
-  const projectId = parseInt(params.id!);
+  const projectId = params.id!;
 
   switch (intent) {
     case "updateProject": {

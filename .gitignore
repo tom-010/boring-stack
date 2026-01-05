@@ -11,8 +11,11 @@ TODO.md
 
 # Dev logs
 dev.log
+route-check-errors/
 
 # Playwright
 playwright/.auth
 test-results/
 playwright-report/
+
+db/

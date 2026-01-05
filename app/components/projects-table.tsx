@@ -23,7 +23,7 @@ import {
 import { Button } from "~/components/ui/button"
 
 interface ProjectWithOwner {
-  id: number
+  id: string
   name: string
   description: string | null
   color: string | null

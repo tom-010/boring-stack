@@ -12,8 +12,8 @@ import { editTodoSchema } from "~/lib/schemas";
 export const handle: RouteHandle = {
   breadcrumb: (data): BreadcrumbItem[] => {
     const { todo, project } = data as {
-      todo: { id: number; title: string };
-      project: { id: number; name: string };
+      todo: { id: string; title: string };
+      project: { id: string; name: string };
     };
     return [
       { label: "Projects", href: "/" },
@@ -28,7 +28,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const session = await auth.api.getSession({ headers: request.headers });
   const userId = session!.user.id;
 
-  const todoId = parseInt(params.id!);
+  const todoId = params.id!;
 
   const todo = await db.todo.findUnique({
     where: { id: todoId, userId },
@@ -53,7 +53,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   const session = await auth.api.getSession({ headers: request.headers });
   const userId = session!.user.id;
 
-  const todoId = parseInt(params.id!);
+  const todoId = params.id!;
   const formData = await request.formData();
 
   const data = parseFormDataOrThrow(formData, editTodoSchema);

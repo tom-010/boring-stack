@@ -23,14 +23,14 @@ import {
 import { Badge } from "~/components/ui/badge"
 
 interface TodoWithRelations {
-  id: number
+  id: string
   title: string
   completed: boolean
   priority: string | null
   dueDate: string | null
   createdAt: Date
   userId: string
-  project: { id: number; name: string }
+  project: { id: string; name: string }
   user: { id: string; name: string }
   assignments: Array<{
     user: { id: string; name: string }

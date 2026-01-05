@@ -1,0 +1,25 @@
+- id: dashboard
+  name: Dashboard 
+  description: Shows some stats about the application and acts as landing-page.
+  show:
+    - How many todos are assigned to the user
+    - How many todos are completed
+  actions:
+    - Clicking on the todo-panel brings me to the todos
+
+- id: todos
+  name: Todo List
+  description: Shows all my todos across all projects in a table.
+  display:
+    - My todos across all projects
+    - In the table there is the todo name, status, priority
+    - High priority, and low priority should be visually distinct. Low in non fat font as name, high the row should get a light grey background.
+    - Show only the name of the todo, not the description and make a clear checkmark in the first column
+  actions:
+    - I can toggle a todo directly in the table
+    - There is a edit button for each todo
+    - There is a create button above the table
+    - When clicking on the priority badge it should cycle through the states which are low, medium, high
+    - I want to be able to delete a todo from the row directly, but only in a more dropdown menu
+    - In every todo row, there should be a copy button, which copies the todo name
+    - There is a copy button above the table, which copies all todos currently displayed as CSV to the clipboard

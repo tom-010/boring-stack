@@ -4,7 +4,7 @@ import { config } from "~/lib/config.server";
 const connectionString = config.db.url;
 
 export interface GenerateThumbnailPayload {
-  attachmentId: number;
+  attachmentId: string;
   filepath: string;
 }
 

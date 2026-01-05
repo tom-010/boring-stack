@@ -7,7 +7,7 @@ datasource db {
 }
 
 model Project {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @db.Uuid
   name        String
   description String?
   color       String?  @default("blue")
@@ -20,8 +20,8 @@ model Project {
 }
 
 model Todo {
-  id          Int              @id @default(autoincrement())
-  projectId   Int              @map("project_id")
+  id          String           @id @db.Uuid
+  projectId   String           @map("project_id") @db.Uuid
   userId      String           @map("user_id")
   title       String
   description String?
@@ -38,8 +38,8 @@ model Todo {
 }
 
 model Attachment {
-  id            Int      @id @default(autoincrement())
-  todoId        Int      @map("todo_id")
+  id            String   @id @db.Uuid
+  todoId        String   @map("todo_id") @db.Uuid
   userId        String   @map("user_id")
   filename      String
   filepath      String
@@ -54,8 +54,8 @@ model Attachment {
 }
 
 model TodoAssignment {
-  id         Int      @id @default(autoincrement())
-  todoId     Int      @map("todo_id")
+  id         String   @id @db.Uuid
+  todoId     String   @map("todo_id") @db.Uuid
   userId     String   @map("user_id")
   assignedBy String   @map("assigned_by")
   createdAt  DateTime @default(now()) @map("created_at")
