@@ -1,4 +1,4 @@
-import type { Route } from "./+types/admin.users";
+import type { Route } from "./+types/admin-users";
 import type { RouteHandle, BreadcrumbItem } from "~/components/page-header";
 import { Link, redirect } from "react-router";
 import { Plus, Users } from "lucide-react";

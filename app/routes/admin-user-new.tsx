@@ -1,4 +1,4 @@
-import type { Route } from "./+types/admin.users.new";
+import type { Route } from "./+types/admin-user-new";
 import type { RouteHandle, BreadcrumbItem } from "~/components/page-header";
 import { Form, Link, redirect, useActionData } from "react-router";
 import { db } from "~/db/client";

@@ -1,7 +1,8 @@
 import type { Route } from "./+types/todos-list";
 import type { RouteHandle } from "~/components/page-header";
-import { redirect } from "react-router";
-import { ListChecks } from "lucide-react";
+import { Form, redirect, useSearchParams } from "react-router";
+import { ListChecks, Search } from "lucide-react";
+import { Input } from "~/components/ui/input";
 import { AllTodosTable } from "~/components/all-todos-table";
 import { db } from "~/db/client";
 import { auth } from "~/lib/auth.server";
@@ -16,16 +17,34 @@ export async function loader({ request }: Route.LoaderArgs) {
   const session = await auth.api.getSession({ headers: request.headers });
   const userId = session!.user.id;
 
+  const url = new URL(request.url);
+  const query = url.searchParams.get("q")?.trim();
+
+  // Build search condition
+  const searchCondition = query
+    ? {
+        OR: [
+          { title: { search: query.split(/\s+/).join(" & ") } },
+          { description: { search: query.split(/\s+/).join(" & ") } },
+        ],
+      }
+    : {};
+
   // Get todos I created OR that are assigned to me
   const todos = await db.todo.findMany({
     where: {
-      OR: [
-        { userId },
+      AND: [
         {
-          assignments: {
-            some: { userId },
-          },
+          OR: [
+            { userId },
+            {
+              assignments: {
+                some: { userId },
+              },
+            },
+          ],
         },
+        searchCondition,
       ],
     },
     include: {
@@ -91,6 +110,9 @@ export function meta() {
 }
 
 export default function TodosListPage({ loaderData }: Route.ComponentProps) {
+  const [searchParams] = useSearchParams();
+  const query = searchParams.get("q") || "";
+
   return (
     <div className="p-6 md:p-8">
       <div className="max-w-6xl mx-auto">
@@ -101,10 +123,25 @@ export default function TodosListPage({ loaderData }: Route.ComponentProps) {
           </p>
         </div>
 
+        <Form method="get" className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              name="q"
+              placeholder="Search todos..."
+              defaultValue={query}
+              className="pl-10"
+            />
+          </div>
+        </Form>
+
         {loaderData.todos.length === 0 ? (
           <div className="text-center text-muted-foreground py-12">
             <ListChecks className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg">No todos yet. Create one in a project!</p>
+            <p className="text-lg">
+              {query ? "No todos match your search." : "No todos yet. Create one in a project!"}
+            </p>
           </div>
         ) : (
           <AllTodosTable

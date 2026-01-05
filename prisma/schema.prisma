@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearchPostgres"]
 }
 
 datasource db {
@@ -7,7 +8,7 @@ datasource db {
 }
 
 model Project {
-  id          String   @id @db.Uuid
+  id          String   @id @default(uuid()) @db.Uuid
   name        String
   description String?
   color       String?  @default("blue")
@@ -20,7 +21,7 @@ model Project {
 }
 
 model Todo {
-  id          String           @id @db.Uuid
+  id          String           @id @default(uuid()) @db.Uuid
   projectId   String           @map("project_id") @db.Uuid
   userId      String           @map("user_id")
   title       String
@@ -38,7 +39,7 @@ model Todo {
 }
 
 model Attachment {
-  id            String   @id @db.Uuid
+  id            String   @id @default(uuid()) @db.Uuid
   todoId        String   @map("todo_id") @db.Uuid
   userId        String   @map("user_id")
   filename      String
@@ -54,7 +55,7 @@ model Attachment {
 }
 
 model TodoAssignment {
-  id         String   @id @db.Uuid
+  id         String   @id @default(uuid()) @db.Uuid
   todoId     String   @map("todo_id") @db.Uuid
   userId     String   @map("user_id")
   assignedBy String   @map("assigned_by")

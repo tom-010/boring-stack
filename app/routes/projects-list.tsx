@@ -1,8 +1,9 @@
 import type { Route } from "./+types/projects-list";
 import type { RouteHandle } from "~/components/page-header";
-import { Form, redirect } from "react-router";
-import { Plus, Folder } from "lucide-react";
+import { Form, redirect, useSearchParams } from "react-router";
+import { Plus, Folder, Search } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import { ProjectsTable } from "~/components/projects-table";
 import { db } from "~/db/client";
 import { auth } from "~/lib/auth.server";
@@ -18,20 +19,38 @@ export async function loader({ request }: Route.LoaderArgs) {
   const session = await auth.api.getSession({ headers: request.headers });
   const userId = session!.user.id;
 
+  const url = new URL(request.url);
+  const query = url.searchParams.get("q")?.trim();
+
+  // Build search condition
+  const searchCondition = query
+    ? {
+        OR: [
+          { name: { search: query.split(/\s+/).join(" & ") } },
+          { description: { search: query.split(/\s+/).join(" & ") } },
+        ],
+      }
+    : {};
+
   // Get projects I own OR where I'm assigned to a todo
   const projects = await db.project.findMany({
     where: {
-      OR: [
-        { ownerId: userId },
+      AND: [
         {
-          todos: {
-            some: {
-              assignments: {
-                some: { userId },
+          OR: [
+            { ownerId: userId },
+            {
+              todos: {
+                some: {
+                  assignments: {
+                    some: { userId },
+                  },
+                },
               },
             },
-          },
+          ],
         },
+        searchCondition,
       ],
     },
     include: {
@@ -84,6 +103,9 @@ export function meta() {
 }
 
 export default function ProjectsPage({ loaderData }: Route.ComponentProps) {
+  const [searchParams] = useSearchParams();
+  const query = searchParams.get("q") || "";
+
   return (
     <div className="p-6 md:p-8">
       <div className="max-w-6xl mx-auto">
@@ -92,7 +114,7 @@ export default function ProjectsPage({ loaderData }: Route.ComponentProps) {
           <p className="text-muted-foreground">Organize your todos into projects</p>
         </div>
 
-        <Form method="post" className="mb-8">
+        <Form method="post" className="mb-6">
           <div className="flex gap-2">
             <input
               type="text"
@@ -109,10 +131,25 @@ export default function ProjectsPage({ loaderData }: Route.ComponentProps) {
           </div>
         </Form>
 
+        <Form method="get" className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              name="q"
+              placeholder="Search projects..."
+              defaultValue={query}
+              className="pl-10"
+            />
+          </div>
+        </Form>
+
         {loaderData.projects.length === 0 ? (
           <div className="text-center text-muted-foreground py-12">
             <Folder className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg">No projects yet. Create one to get started!</p>
+            <p className="text-lg">
+              {query ? "No projects match your search." : "No projects yet. Create one to get started!"}
+            </p>
           </div>
         ) : (
           <ProjectsTable

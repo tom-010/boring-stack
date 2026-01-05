@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:18.1-alpine # 12/25
+    image: pgvector/pgvector:pg17
     environment:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app

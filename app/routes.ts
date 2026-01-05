@@ -7,7 +7,7 @@ import {
 
 export default [
   // Public routes
-  route("api/auth/*", "routes/api.auth.$.ts"),
+  route("api/auth/*", "routes/api-auth.ts"),
   route("login", "routes/login.tsx"),
 
   // Protected routes (auth middleware runs first)
@@ -19,9 +19,9 @@ export default [
     route("projects/:id", "routes/project-detail.tsx"),
     route("todos/:id", "routes/todo-detail.tsx"),
     route("todos/:id/edit", "routes/todo-edit.tsx"),
-    route("admin/users", "routes/admin.users.tsx"),
-    route("admin/users/new", "routes/admin.users.new.tsx"),
-    route("admin/users/:id/edit", "routes/admin.users.$id.edit.tsx"),
+    route("admin/users", "routes/admin-users.tsx"),
+    route("admin/users/new", "routes/admin-user-new.tsx"),
+    route("admin/users/:id/edit", "routes/admin-user-edit.tsx"),
     route("debug/py", "routes/debug-py.tsx"),
   ]),
 

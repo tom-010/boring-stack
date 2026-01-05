@@ -117,6 +117,7 @@ Other little ideas:
 
 <coding_standards>
   <rules>
+    - **Route Filenames:** Name route files by intent (e.g., `admin-user-edit.tsx`), not URL structure (e.g., `admin.users.$id.edit.tsx`). The URL lives in `routes.ts`, not the filename.
     - **Import Alias:** ALWAYS use `~/` alias for imports (e.g., `import { Button } from '~/components/ui/button'`). Never use relative paths like `../../`.
     - **DB Client:** Import as `import { db } from '~/db/client'`.
     - **Utilities:** Import `cn` from `~/lib/utils`.
