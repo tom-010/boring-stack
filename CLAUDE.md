@@ -112,7 +112,7 @@ Other little ideas:
     - **After changing Python:** Run `./scripts/sync-py.sh` to regenerate `app/lib/py/gen/`.
     - **Import:** `import { someFunction } from "~/lib/py/client"` (in loaders/actions only)
     - **Details:** See `docs/python-bridge.md`.
-  </pattern>
+    - **uv is the package manager.** Never use pip. Use `uv add <pkg>` to add deps, `uv sync` to install from lockfile, `uv run <cmd>` to execute. Don't use python directly but only through uv.</pattern>
 </architecture>
 
 <coding_standards>
