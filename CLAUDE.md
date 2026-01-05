@@ -39,7 +39,14 @@ Other little ideas:
   <cmd name="py:sync" description="Regenerate Python SDK">./scripts/sync-py.sh</cmd>
   <cmd name="py:dev" description="Start Python service">cd py && uv run python main.py</cmd>
   <cmd name="lint" description="Lint and auto-fix TS + Python">npm run lint</cmd>
+  <cmd name="killport" description="Kill process on port">./scripts/killport.sh PORT</cmd>
 </commands>
+
+<port_conflicts>
+  - **Always kill blocking processes.** If a port is in use (e.g., 5173, 8123), run `./scripts/killport.sh PORT` immediately. No sudo, no asking.
+  - **Docker/Postgres conflicts:** If port 5432 is blocked or the conflict is likely Docker-related, run `./scripts/kill_containers.sh`. This kills all running containers — safe because no other containers should be running on this dev machine.
+  - **No other processes matter.** This is a dev machine. If something blocks the dev server or Python service, kill it.
+</port_conflicts>
 
 <architecture>
   <map>

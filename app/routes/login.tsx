@@ -60,6 +60,7 @@ export default function LoginPage() {
                 name="email"
                 type="email"
                 placeholder="admin@localhost"
+                defaultValue={import.meta.env.DEV ? "admin@example.com" : undefined}
                 required
                 autoComplete="email"
               />
@@ -70,6 +71,7 @@ export default function LoginPage() {
                 id="password"
                 name="password"
                 type="password"
+                defaultValue={import.meta.env.DEV ? "admin" : undefined}
                 required
                 autoComplete="current-password"
               />
