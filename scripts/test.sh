@@ -6,6 +6,9 @@ EXIT_CODE=0
 
 cd "$PROJECT_ROOT"
 
+echo "Seeding database..."
+npx tsx prisma/seed.ts || exit 1
+
 echo "Running unit tests..."
 npm run test || EXIT_CODE=1
 

@@ -1,10 +1,9 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Project and Todo CRUD", () => {
-  const projectName = `Test Project ${Date.now()}`;
-  const todoTitle = "Buy groceries";
-
   test("can create project, add todo, and see it in My Todos", async ({ page }) => {
+    const projectName = `Test Project ${Date.now()}`;
+    const todoTitle = `Buy groceries ${Date.now()}`;
     // Navigate to projects
     await page.goto("/projects");
     await expect(page).toHaveURL("/projects");
@@ -39,6 +38,9 @@ test.describe("Project and Todo CRUD", () => {
   });
 
   test("can create project, add todo, and mark it complete", async ({ page }) => {
+    const projectName = `Test Project ${Date.now()}`;
+    const todoTitle = `Buy groceries ${Date.now()}`;
+
     // Navigate to projects
     await page.goto("/projects");
     await expect(page).toHaveURL("/projects");

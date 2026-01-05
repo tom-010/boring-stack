@@ -23,6 +23,7 @@ Other little ideas:
 - Types are your friend as they provide fast feedback for fast iterations.
 - The Programmers Time, Brain-Capacity and Happyness are the most important resource.
 - Logging: Unix philosophy. Silent on success, stderr on error. No emojis, no "cute" messages.
+- The database is ephemeral. Seed data is the source of truth. Reset anytime via `npm run db:reset`.
 <princples>
 
 <>

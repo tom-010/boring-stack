@@ -12,13 +12,11 @@ function verifyRoutes() {
 
   const content = fs.readFileSync(ROUTES_FILE, "utf-8");
   const errors: string[] = [];
-  let checkCount = 0;
 
   const routePattern = /route\s*\(\s*(["']).*?\1\s*,\s*(["'])(.*?)\2/g;
   const layoutIndexPattern = /(?:layout|index)\s*\(\s*(["'])(.*?)\1/g;
 
   const checkFile = (relativeFilePath: string) => {
-    checkCount++;
     const fullPath = path.resolve(ROUTE_BASE_DIR, relativeFilePath);
     if (!fs.existsSync(fullPath)) {
       errors.push(relativeFilePath);
