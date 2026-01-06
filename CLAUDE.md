@@ -109,7 +109,8 @@ Other little ideas:
     - **SERVER-SIDE ONLY.** Never call Python from the browser. Only call from loaders/actions. The Python service is internal (localhost:8123), not exposed to clients.
     - **Why:** Python handles compute-heavy tasks (image processing, ML). Same container in prod, 100% coupled to this app.
     - **How types work:** Pydantic models → FastAPI generates OpenAPI → `@hey-api/openapi-ts` generates TypeScript SDK.
-    - **After changing Python:** Run `./scripts/sync-py.sh` to regenerate `app/lib/py/gen/`.
+    - **After changing Python:** Run `./scripts/sync-py.sh` to regenerate `app/lib/py/gen/`. Then run `cd py && make typecheck` to verify types.
+    - **Type safety in Python:** All FastAPI endpoint functions in `app/api.py` MUST be fully typed — explicit parameter types and return types. No `Any`, no missing annotations.
     - **Import:** `import { someFunction } from "~/lib/py/client"` (in loaders/actions only)
     - **Details:** See `docs/python-bridge.md`.
     - **uv is the package manager.** Never use pip. Use `uv add <pkg>` to add deps, `uv sync` to install from lockfile, `uv run <cmd>` to execute. Don't use python directly but only through uv.</pattern>

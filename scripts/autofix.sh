@@ -36,6 +36,14 @@ if [ $EXIT_CODE -ne 0 ]; then
     claude --dangerously-skip-permissions "run npx tsx ./scripts/check-route-filenames.ts and fix any issues until it works"
 fi
 
-npm audit fix 
+EXIT_CODE=0
+cd py && make typecheck && EXIT_CODE=$? || EXIT_CODE=1
+cd ..
+
+if [ $EXIT_CODE -ne 0 ]; then
+    claude --dangerously-skip-permissions "run 'cd py && make typecheck' and fix any issues until it works"
+fi
+
+npm audit fix
 
 exit $EXIT_CODE

@@ -16,12 +16,14 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "mypy>=1.19.1",
     "ruff>=0.14.10",
 ]
 
 [tool.ruff]
-line-length = 120  # Don't be pedantic about line length
+line-length = 120
 exclude = [".venv"]
+src = ["app"]
 
 [tool.ruff.lint]
 select = [
@@ -42,3 +44,18 @@ ignore = [
 
 [tool.ruff.format]
 quote-style = "double"
+
+
+[tool.mypy]
+python_version = "3.12"  # or your version
+# 1. Silence errors about third-party libraries not having type stubs
+ignore_missing_imports = true
+# 2. Do not force me to write type hints
+disallow_untyped_defs = false
+# 3. BUT, check the body of functions even if I didn't type-hint them
+check_untyped_defs = true
+# 4. Be lenient with None (Optional) types
+no_implicit_optional = false
+# 5. Keep the output clean
+show_error_codes = true
+pretty = true

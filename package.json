@@ -9,7 +9,7 @@
     "dev:wait-for-db": "npx tsx scripts/wait-for-db.ts",
     "dev:vite": "react-router dev",
     "dev:worker": "npx tsx scripts/worker.ts",
-    "dev:py": "cd py && uv run python -m uvicorn main:app --reload --host 0.0.0.0 --port 8123",
+    "dev:py": "cd py && make serve",
     "build": "react-router build",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",

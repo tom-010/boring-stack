@@ -4,13 +4,13 @@ set -e
 # Generates TypeScript SDK from Python FastAPI.
 # See docs/python-bridge.md
 
-cd py/
+cd py/app
 uv run python3 -c "
 import json
-from main import app
+from app import app
 print(json.dumps(app.openapi(), indent=2))
-" > ../openapi.json
-cd ..
+" > ../../openapi.json
+cd ../..
 
 npx @hey-api/openapi-ts \
   -i openapi.json \
