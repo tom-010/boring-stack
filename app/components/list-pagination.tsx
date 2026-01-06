@@ -28,7 +28,7 @@ export function ListPagination({ page, totalPages, buildPageUrl }: ListPaginatio
     const halfVisible = Math.floor(maxVisiblePages / 2);
 
     let start = Math.max(1, page - halfVisible);
-    let end = Math.min(totalPages, start + maxVisiblePages - 1);
+    const end = Math.min(totalPages, start + maxVisiblePages - 1);
 
     if (end - start + 1 < maxVisiblePages) {
       start = Math.max(1, end - maxVisiblePages + 1);
