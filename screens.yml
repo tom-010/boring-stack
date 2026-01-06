@@ -66,6 +66,7 @@
 - id: my-todos
   name: Todo List
   description: Shows all my todos across all projects in a table.
+  intent: Listing all todos owned or assigned to me across all projects that I own.
   route: /my-todos
   show:
     - Todos table with name, status, priority

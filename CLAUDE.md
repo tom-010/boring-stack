@@ -92,6 +92,13 @@ Other little ideas:
     - **Manage users via CLI:** `npx tsx scripts/manage-users.ts`
   </pattern>
 
+  <pattern name="Pagination">
+    - **Default for ALL tables.** Every table view must be paginated.
+    - **Offset pagination:** 50 items per page by default.
+    - **URL is source of truth:** Track `page` and `size` in URL params (e.g., `?page=2&size=50`).
+    - **Loader:** Parse `page` and `size` from `request.url`, use in Prisma `skip`/`take`.
+  </pattern>
+
   <pattern name="Code Output Behavior">
     - **Full Files:** When generating code for files under 200 lines, ALWAYS output the full file content. Do not use `// ... existing code`.
     - **Reasoning:** Optimizes for "Copy-Paste" velocity.
