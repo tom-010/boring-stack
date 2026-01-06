@@ -17,7 +17,6 @@ export default [
     route("projects", "routes/projects-list.tsx"),
     route("projects/new", "routes/projects-new.tsx"),
     route("my-todos", "routes/my-todos.tsx"), // Listing all todos owned or assigned to me across all projects.
-    route("my-todos2", "routes/my-todos2.tsx"), // Generated from template
     route("projects/:id", "routes/project-detail.tsx"),
     route("todos/:id", "routes/todo-detail.tsx"),
     route("todos/:id/edit", "routes/todo-edit.tsx"),

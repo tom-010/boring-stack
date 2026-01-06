@@ -137,6 +137,7 @@ Other little ideas:
     - **Styling:** Tailwind classes only. Keep it simple. Use defaults where possible.
     - **Type Safety:** Use `typeof loader` for type inference. Do not manually type API responses.
     - **React Router v7:** Use `<Link>` and `<Form>`. Avoid native `<a>` or `<form>` tags to preserve SPA navigation.
+    - **Consistency First:** When adding a new route, read similar existing routes first and copy their style. Consistent UX beats "better" ideas. Default to plain, boring Shadcn — it's good enough.
   </rules>
 
   <negative_constraints>
