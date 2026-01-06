@@ -1,3 +1,6 @@
+/*+++
+intent = "Create a new project"
++++*/
 import type { Route } from "./+types/projects-new";
 import type { RouteHandle } from "~/components/page-header";
 import { Form, redirect, Link } from "react-router";

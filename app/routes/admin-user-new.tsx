@@ -1,3 +1,6 @@
+/*+++
+intent = "Create new admin user"
++++*/
 import type { Route } from "./+types/admin-user-new";
 import type { RouteHandle, BreadcrumbItem } from "~/components/page-header";
 import { Form, Link, redirect, useActionData } from "react-router";

@@ -1,6 +1,6 @@
-/*
-intent: Listing all todos owned or assigned to me across all projects that I own.
-*/
+/*+++
+intent = "List all todos owned or assigned to current user"
++++*/
 import type { Route } from "./+types/my-todos";
 import type { RouteHandle } from "~/components/page-header";
 import { Form, redirect, useSearchParams } from "react-router";

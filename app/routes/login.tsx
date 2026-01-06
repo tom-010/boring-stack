@@ -1,3 +1,6 @@
+/*+++
+intent = "User login page"
++++*/
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { redirect } from "react-router";

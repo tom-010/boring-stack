@@ -1,3 +1,6 @@
+/*+++
+intent = "List all projects"
++++*/
 import type { Route } from "./+types/projects-list";
 import type { RouteHandle } from "~/components/page-header";
 import { Link, redirect, useSearchParams, useFetcher } from "react-router";

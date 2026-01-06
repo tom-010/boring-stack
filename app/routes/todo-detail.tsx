@@ -1,3 +1,6 @@
+/*+++
+intent = "View single todo details"
++++*/
 import { useState } from "react";
 import type { Route } from "./+types/todo-detail";
 import type { RouteHandle, BreadcrumbItem } from "~/components/page-header";
