@@ -1,7 +1,7 @@
 import type { Route } from "./+types/projects-list";
 import type { RouteHandle } from "~/components/page-header";
 import { Form, Link, redirect, useSearchParams, useFetcher } from "react-router";
-import { Plus, Folder, Search, Pencil, Trash2, MoreHorizontal, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Plus, Folder, Search, Pencil, Trash2, MoreHorizontal, ChevronsLeft, ChevronsRight, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {
@@ -36,7 +36,10 @@ export const handle: RouteHandle = {
   breadcrumb: { label: "Projects", href: "/projects" },
 };
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 30;
+
+type SortField = "name" | "createdAt" | "open" | "closed";
+type SortOrder = "asc" | "desc";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const session = await auth.api.getSession({ headers: request.headers });
@@ -45,6 +48,14 @@ export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const query = url.searchParams.get("q")?.trim();
   const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
+  const sortParam = url.searchParams.get("sort");
+  const orderParam = url.searchParams.get("order");
+
+  const validSorts = ["name", "createdAt", "open", "closed"];
+  const sort: SortField | null = validSorts.includes(sortParam || "")
+    ? (sortParam as SortField)
+    : null;
+  const order: SortOrder = orderParam === "asc" ? "asc" : "desc";
 
   const searchCondition = query
     ? {
@@ -75,25 +86,73 @@ export async function loader({ request }: Route.LoaderArgs) {
     ],
   };
 
+  // For open/closed sorting, we need all projects to sort correctly, then paginate
+  const needsClientSort = sort === "open" || sort === "closed";
+
+  const orderBy = sort === null
+    ? { createdAt: "desc" as const }
+    : needsClientSort
+      ? { createdAt: "desc" as const }
+      : { [sort]: order };
+
   const [total, projects] = await Promise.all([
     db.project.count({ where }),
     db.project.findMany({
       where,
       include: {
         owner: { select: { id: true, name: true } },
+        _count: {
+          select: {
+            todos: { where: { completed: false } },
+          },
+        },
       },
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
+      orderBy,
+      // If sorting by counts, fetch all then paginate client-side
+      ...(needsClientSort ? {} : { skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE }),
     }),
   ]);
+
+  // Get closed counts separately (Prisma doesn't support multiple conditional counts)
+  const projectIds = projects.map((p) => p.id);
+  const closedCounts = await db.todo.groupBy({
+    by: ["projectId"],
+    where: {
+      projectId: { in: projectIds },
+      completed: true,
+    },
+    _count: true,
+  });
+
+  const closedCountMap = new Map(closedCounts.map((c) => [c.projectId, c._count]));
+
+  let projectsWithCounts = projects.map((p) => ({
+    ...p,
+    openCount: p._count.todos,
+    closedCount: closedCountMap.get(p.id) ?? 0,
+  }));
+
+  // Client-side sort for computed fields
+  if (needsClientSort) {
+    const field = sort === "open" ? "openCount" : "closedCount";
+    projectsWithCounts.sort((a, b) =>
+      order === "asc" ? a[field] - b[field] : b[field] - a[field]
+    );
+    // Paginate after sorting
+    projectsWithCounts = projectsWithCounts.slice(
+      (page - 1) * PAGE_SIZE,
+      page * PAGE_SIZE
+    );
+  }
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return {
-    projects,
+    projects: projectsWithCounts,
     currentUserId: userId,
     pagination: { page, pageSize: PAGE_SIZE, total, totalPages },
+    sort,
+    order,
   };
 }
 
@@ -161,10 +220,61 @@ function buildPageUrl(page: number, searchParams: URLSearchParams) {
   return qs ? `?${qs}` : "/projects";
 }
 
+function SortableHeader({
+  field,
+  currentSort,
+  currentOrder,
+  searchParams,
+  children,
+  className,
+}: {
+  field: SortField;
+  currentSort: SortField | null;
+  currentOrder: SortOrder;
+  searchParams: URLSearchParams;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  // Three states: unsorted -> asc -> desc -> unsorted
+  const isActive = currentSort === field;
+  let nextOrder: SortOrder | null;
+  if (!isActive) {
+    nextOrder = "asc";
+  } else if (currentOrder === "asc") {
+    nextOrder = "desc";
+  } else {
+    nextOrder = null; // Reset to default
+  }
+
+  const params = new URLSearchParams(searchParams);
+  params.delete("page"); // Reset to page 1 on sort change
+  if (nextOrder === null) {
+    params.delete("sort");
+    params.delete("order");
+  } else {
+    params.set("sort", field);
+    params.set("order", nextOrder);
+  }
+  const href = params.toString() ? `?${params.toString()}` : "/projects";
+
+  return (
+    <Link to={href} className={`flex items-center gap-1 hover:text-foreground ${className || ""}`}>
+      {children}
+      {isActive && (
+        currentOrder === "asc" ? (
+          <ArrowUp className="h-4 w-4" />
+        ) : (
+          <ArrowDown className="h-4 w-4" />
+        )
+      )}
+    </Link>
+  );
+}
+
 export default function ProjectsPage({ loaderData }: Route.ComponentProps) {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
-  const { projects, currentUserId, pagination } = loaderData;
+  const { projects, currentUserId, pagination, sort, order } = loaderData;
   const { page, total, totalPages, pageSize } = pagination;
   const startIndex = (page - 1) * pageSize;
 
@@ -307,9 +417,27 @@ export default function ProjectsPage({ loaderData }: Route.ComponentProps) {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12">#</TableHead>
-                    <TableHead>Name</TableHead>
+                    <TableHead>
+                      <SortableHeader field="name" currentSort={sort} currentOrder={order} searchParams={searchParams}>
+                        Name
+                      </SortableHeader>
+                    </TableHead>
                     <TableHead className="hidden md:table-cell">Description</TableHead>
-                    <TableHead className="hidden md:table-cell">Created</TableHead>
+                    <TableHead className="text-center">
+                      <SortableHeader field="open" currentSort={sort} currentOrder={order} searchParams={searchParams} className="justify-center">
+                        Open
+                      </SortableHeader>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <SortableHeader field="closed" currentSort={sort} currentOrder={order} searchParams={searchParams} className="justify-center">
+                        Closed
+                      </SortableHeader>
+                    </TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      <SortableHeader field="createdAt" currentSort={sort} currentOrder={order} searchParams={searchParams}>
+                        Created
+                      </SortableHeader>
+                    </TableHead>
                     <TableHead className=""></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -336,6 +464,12 @@ export default function ProjectsPage({ loaderData }: Route.ComponentProps) {
                         </TableCell>
                         <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
                           {project.description || "-"}
+                        </TableCell>
+                        <TableCell className="text-center text-sm">
+                          {project.openCount}
+                        </TableCell>
+                        <TableCell className="text-center text-sm">
+                          {project.closedCount}
                         </TableCell>
                         <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
                           {new Date(project.createdAt).toLocaleDateString()}

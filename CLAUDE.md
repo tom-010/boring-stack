@@ -94,8 +94,8 @@ Other little ideas:
 
   <pattern name="Pagination">
     - **Default for ALL tables.** Every table view must be paginated.
-    - **Offset pagination:** 50 items per page by default.
-    - **URL is source of truth:** Track `page` and `size` in URL params (e.g., `?page=2&size=50`).
+    - **Offset pagination:** 30 items per page by default.
+    - **URL is source of truth:** Track `page` and `size` in URL params (e.g., `?page=2&size=30`).
     - **Loader:** Parse `page` and `size` from `request.url`, use in Prisma `skip`/`take`.
   </pattern>
 
