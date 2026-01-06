@@ -124,6 +124,22 @@ Other little ideas:
     - **Import:** `import { someFunction } from "~/lib/py/client"` (in loaders/actions only)
     - **Details:** See `docs/python-bridge.md`.
     - **uv is the package manager.** Never use pip. Use `uv add <pkg>` to add deps, `uv sync` to install from lockfile, `uv run <cmd>` to execute. Don't use python directly but only through uv.</pattern>
+
+  <pattern name="File Metadata (Front Matter)">
+    - **Format:** TOML in a comment block at the top of `.tsx` files:
+      ```tsx
+      /*+++
+      intent = "Project detail with todo management"
+      +++*/
+      import { ... }
+      ```
+    - **Required field:** `intent` — a short description of what the file does. Add when creating files, update if the purpose changes significantly.
+    - **CLI tool:** `npx tsx scripts/frontmatter.ts <file> <command> [args]`
+      - `get` — show all metadata (or `get <key>` for one)
+      - `set <key> <value>` — add or update a key
+      - `delete <key>` — remove a key
+    - **When to update:** If you significantly change what a file does, update the `intent` field.
+  </pattern>
 </architecture>
 
 <coding_standards>
@@ -138,6 +154,7 @@ Other little ideas:
     - **Type Safety:** Use `typeof loader` for type inference. Do not manually type API responses.
     - **React Router v7:** Use `<Link>` and `<Form>`. Avoid native `<a>` or `<form>` tags to preserve SPA navigation.
     - **Consistency First:** When adding a new route, read similar existing routes first and copy their style. Consistent UX beats "better" ideas. Default to plain, boring Shadcn — it's good enough.
+    - **File Intent:** When creating or significantly modifying a `.tsx` route file, add/update the `intent` field in front matter. See "File Metadata" pattern.
   </rules>
 
   <negative_constraints>

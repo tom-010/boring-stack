@@ -1,3 +1,6 @@
+/*+++
+intent = "Project detail page with todo management"
++++*/
 import { useEffect, useRef, useState } from "react";
 import type { Route } from "./+types/project-detail";
 import type { RouteHandle, BreadcrumbItem } from "~/components/page-header";
