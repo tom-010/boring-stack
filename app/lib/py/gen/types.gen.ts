@@ -39,9 +39,9 @@ export type GenerateThumbnailResponse = {
 };
 
 /**
- * GreetPersonSchema
+ * GreetPersonRequest
  */
-export type GreetPersonSchema = {
+export type GreetPersonRequest = {
     /**
      * First Name
      */
@@ -53,6 +53,16 @@ export type GreetPersonSchema = {
 };
 
 /**
+ * GreetPersonResponse
+ */
+export type GreetPersonResponse = {
+    /**
+     * Greeting
+     */
+    greeting: string;
+};
+
+/**
  * HTTPValidationError
  */
 export type HttpValidationError = {
@@ -60,6 +70,16 @@ export type HttpValidationError = {
      * Detail
      */
     detail?: Array<ValidationError>;
+};
+
+/**
+ * HelloResponse
+ */
+export type HelloResponse = {
+    /**
+     * Message
+     */
+    message: string;
 };
 
 /**
@@ -91,11 +111,13 @@ export type HelloHiGetResponses = {
     /**
      * Successful Response
      */
-    200: unknown;
+    200: HelloResponse;
 };
 
+export type HelloHiGetResponse = HelloHiGetResponses[keyof HelloHiGetResponses];
+
 export type GreetPersonGreetPostData = {
-    body: GreetPersonSchema;
+    body: GreetPersonRequest;
     path?: never;
     query?: never;
     url: '/greet';
@@ -114,8 +136,10 @@ export type GreetPersonGreetPostResponses = {
     /**
      * Successful Response
      */
-    200: unknown;
+    200: GreetPersonResponse;
 };
+
+export type GreetPersonGreetPostResponse = GreetPersonGreetPostResponses[keyof GreetPersonGreetPostResponses];
 
 export type ResizeImageResizePostData = {
     body: BodyResizeImageResizePost;

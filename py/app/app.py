@@ -20,28 +20,52 @@ app = FastAPI(title="Image Resize Service")
 UPLOADS_BASE = Path(os.getenv("UPLOADS_BASE", str(Path(__file__).parent.parent / "public")))
 
 
+# --- Models ---
+
+
+class HelloResponse(BaseModel):
+    message: str
+
+
+class GreetPersonRequest(BaseModel):
+    first_name: str
+    last_name: str
+
+
+class GreetPersonResponse(BaseModel):
+    greeting: str
+
+
+class GenerateThumbnailRequest(BaseModel):
+    filepath: str  # e.g., "/uploads/123-file.jpg"
+    width: int = 200
+    height: int = 200
+
+
+class GenerateThumbnailResponse(BaseModel):
+    thumbnail_path: str  # e.g., "/uploads/thumbnails/thumb-123-file.jpg"
+
+
+# --- Endpoints ---
+
+
 @app.get("/hi")
-async def hello():
+async def hello() -> HelloResponse:
     """Simple endpoint to verify the service is running."""
     log.debug("debug message")
     log.info("info message")
     log.warning("warning message")
     log.error("error message")
     log.critical("critical message")
-    return {"message": "Hello, World!"}
-
-
-class GreetPersonSchema(BaseModel):
-    first_name: str
-    last_name: str
+    return HelloResponse(message="Hello, World!")
 
 
 @app.post("/greet")
-async def greet_person(person: GreetPersonSchema):
+async def greet_person(person: GreetPersonRequest) -> GreetPersonResponse:
     """Greet a person by their first and last name."""
     greeting = f"Hello, {person.first_name} {person.last_name}!"
     log.info(f"Greeting generated: {greeting}")
-    return {"greeting": greeting}
+    return GreetPersonResponse(greeting=greeting)
 
 
 @app.post("/resize")
@@ -49,7 +73,7 @@ async def resize_image(
     file: UploadFile = File(...),
     width: int = Query(..., gt=0, le=4096, description="Target width in pixels"),
     height: int = Query(..., gt=0, le=4096, description="Target height in pixels"),
-):
+) -> StreamingResponse:
     """Resize an uploaded image to the specified dimensions."""
     contents = await file.read()
     image = Image.open(BytesIO(contents))
@@ -65,16 +89,6 @@ async def resize_image(
 
     media_type = f"image/{format.lower()}"
     return StreamingResponse(output, media_type=media_type)
-
-
-class GenerateThumbnailRequest(BaseModel):
-    filepath: str  # e.g., "/uploads/123-file.jpg"
-    width: int = 200
-    height: int = 200
-
-
-class GenerateThumbnailResponse(BaseModel):
-    thumbnail_path: str  # e.g., "/uploads/thumbnails/thumb-123-file.jpg"
 
 
 @app.post("/generate-thumbnail")
