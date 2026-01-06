@@ -16,6 +16,9 @@ Value Follows a Power Law; Imperfection is Economic. The majority of utility der
 
 Other little ideas:
 - The URL is the Source of Truth. The Database is the State. The Client is just a View. No API Layer, no client state like redux, no loading spinners.
+- F5-ability: All UI state must survive a page refresh. Tabs, filters, modals, selections — if it's visible, it's in the URL. Never store UI state in React state alone.
+  - **Search params (`?tab=settings`):** Use when the loader needs the value — tabs that load different data, filters, pagination, search queries. This is the default choice.
+  - **Hash (`#section`):** Use for in-page scroll anchors or purely client-side state that doesn't affect data loading. Rare in this stack.
 - Co-location is king: Put things together, best in a single file.
 - No magic. E.g. route.ts over file-system based routing.
 - Keep things simple. E.g. no own caching layer.
