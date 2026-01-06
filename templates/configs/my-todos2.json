@@ -1,0 +1,24 @@
+{
+  "filename": "my-todos2",
+  "entityName": "Todo",
+  "entityNamePlural": "Todos",
+  "entityLabel": "todo",
+  "entityLabelPlural": "todos",
+  "basePath": "/my-todos2",
+  "prismaModel": "todo",
+  "icon": "CheckSquare",
+  "sortFields": [
+    { "name": "title", "label": "Title", "type": "string" },
+    { "name": "priority", "label": "Priority", "type": "string" },
+    { "name": "dueDate", "label": "Due Date", "type": "string" },
+    { "name": "createdAt", "label": "Created", "type": "date" }
+  ],
+  "columns": [
+    { "field": "title", "label": "Title", "sortable": true, "link": true },
+    { "field": "priority", "label": "Priority", "sortable": true },
+    { "field": "dueDate", "label": "Due Date", "sortable": true, "hiddenOnMobile": true },
+    { "field": "createdAt", "label": "Created", "sortable": true, "hiddenOnMobile": true, "type": "date" }
+  ],
+  "searchFields": ["title", "description"],
+  "ownerField": null
+}

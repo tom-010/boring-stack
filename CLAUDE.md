@@ -182,17 +182,30 @@ Other little ideas:
   - `./prisma/schema.prisma` — defines data models
 </orientation>
 
+<templates>
+  **ALWAYS use templates when creating new route files.** Writing routes from scratch is the last resort.
+
+  Templates provide a consistent UI skeleton. The generated code is a starting point—adapt it, remove what doesn't fit, add what's missing. See `templates/README.md` for the full catalogue and usage.
+
+  ```bash
+  npx tsx scripts/generate-from-template.ts <template> <config.json> <output>
+  ```
+
+  After generation: register route in `app/routes.ts`, run `npm run typecheck`, then adapt the code.
+</templates>
+
 <workflows>
   <workflow name="Add a new model">
     1. Add model to `prisma/schema.prisma`
     2. Run `npm run db:migrate` then `npm run db:generate`
     3. Update `prisma/seed.ts` with example data for the new model
-    4. Create route file, add to `routes.ts`
+    4. Create route file via template, add to `routes.ts`
   </workflow>
   <workflow name="Add a new page">
-    1. Create route file in `app/routes/`
+    1. Generate route from template (see `templates/README.md`)
     2. Register in `app/routes.ts`
-    3. Add loader/action as needed
+    3. Run `npm run typecheck`
+    4. Adapt loader/action/UI to actual requirements
   </workflow>
   <workflow name="Add a Python endpoint">
     1. Define Pydantic model + endpoint in `py/main.py`

@@ -1,7 +1,57 @@
-import type { Route } from "./+types/projects-list";
+{#
+  Template: List Page with Pagination, Search, and Sortable Columns
+
+  Available fields:
+    - filename: Route filename without extension (e.g., "users-list")
+    - entityName: Singular name, PascalCase (e.g., "User")
+    - entityNamePlural: Plural name, PascalCase (e.g., "Users")
+    - entityLabel: Singular display name, lowercase (e.g., "user")
+    - entityLabelPlural: Plural display name, lowercase (e.g., "users")
+    - basePath: URL base path (e.g., "/users")
+    - prismaModel: Prisma model name (e.g., "user")
+    - icon: Lucide icon name for empty state (e.g., "Users")
+    - sortFields: Array of sortable field configs
+        - name: Field name in DB (e.g., "name", "createdAt")
+        - label: Display label (e.g., "Name", "Created")
+        - type: "string" | "date" | "number"
+    - columns: Array of table column configs
+        - field: Field name (e.g., "name", "email")
+        - label: Header label (e.g., "Name", "Email")
+        - sortable: boolean
+        - link: boolean (makes it a link to detail page)
+        - hiddenOnMobile: boolean
+        - type: "string" | "date" | "number"
+    - searchFields: Array of field names to search (e.g., ["name", "email"])
+    - ownerField: Field name for ownership check (e.g., "ownerId"), or null if no ownership
+
+  Example usage:
+    {
+      "filename": "users-list",
+      "entityName": "User",
+      "entityNamePlural": "Users",
+      "entityLabel": "user",
+      "entityLabelPlural": "users",
+      "basePath": "/admin/users",
+      "prismaModel": "user",
+      "icon": "Users",
+      "sortFields": [
+        { "name": "name", "label": "Name", "type": "string" },
+        { "name": "email", "label": "Email", "type": "string" },
+        { "name": "createdAt", "label": "Created", "type": "date" }
+      ],
+      "columns": [
+        { "field": "name", "label": "Name", "sortable": true, "link": true },
+        { "field": "email", "label": "Email", "sortable": true, "hiddenOnMobile": true },
+        { "field": "createdAt", "label": "Created", "sortable": true, "hiddenOnMobile": true, "type": "date" }
+      ],
+      "searchFields": ["name", "email"],
+      "ownerField": null
+    }
+#}
+import type { Route } from "./+types/{{ filename }}";
 import type { RouteHandle } from "~/components/page-header";
 import { Link, redirect, useSearchParams, useFetcher } from "react-router";
-import { Plus, Folder, Pencil, Trash2, MoreHorizontal, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, {{ icon }}, Pencil, Trash2, MoreHorizontal, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import {
   Table,
@@ -27,12 +77,13 @@ import { deleteByIdSchema } from "~/lib/schemas";
 import { log } from "~/lib/logger.server";
 
 export const handle: RouteHandle = {
-  breadcrumb: { label: "Projects", href: "/projects" },
+  breadcrumb: { label: "{{ entityNamePlural }}", href: "{{ basePath }}" },
 };
 
 const PAGE_SIZE = 30;
+const BASE_PATH = "{{ basePath }}";
 
-type SortField = "name" | "createdAt" | "open" | "closed";
+type SortField = {{ sortFields | map(attribute='name') | map('dump') | join(' | ') }};
 type SortOrder = "asc" | "desc";
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -45,7 +96,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   const sortParam = url.searchParams.get("sort");
   const orderParam = url.searchParams.get("order");
 
-  const validSorts = ["name", "createdAt", "open", "closed"];
+  const validSorts = [{{ sortFields | map(attribute='name') | map('dump') | join(', ') }}];
   const sort: SortField | null = validSorts.includes(sortParam || "")
     ? (sortParam as SortField)
     : null;
@@ -54,95 +105,38 @@ export async function loader({ request }: Route.LoaderArgs) {
   const searchCondition = query
     ? {
         OR: [
-          { name: { search: query.split(/\s+/).join(" & ") } },
-          { description: { search: query.split(/\s+/).join(" & ") } },
+{% for field in searchFields %}
+          { {{ field }}: { contains: query, mode: "insensitive" as const } },
+{% endfor %}
         ],
       }
     : {};
 
   const where = {
-    AND: [
-      {
-        OR: [
-          { ownerId: userId },
-          {
-            todos: {
-              some: {
-                assignments: {
-                  some: { userId },
-                },
-              },
-            },
-          },
-        ],
-      },
-      searchCondition,
-    ],
+{% if ownerField %}
+    {{ ownerField }}: userId,
+{% endif %}
+    ...searchCondition,
   };
-
-  // For open/closed sorting, we need all projects to sort correctly, then paginate
-  const needsClientSort = sort === "open" || sort === "closed";
 
   const orderBy = sort === null
     ? { createdAt: "desc" as const }
-    : needsClientSort
-      ? { createdAt: "desc" as const }
-      : { [sort]: order };
+    : { [sort]: order };
 
-  const [total, projects] = await Promise.all([
-    db.project.count({ where }),
-    db.project.findMany({
+  const [total, items] = await Promise.all([
+    db.{{ prismaModel }}.count({ where }),
+    db.{{ prismaModel }}.findMany({
       where,
-      include: {
-        owner: { select: { id: true, name: true } },
-        _count: {
-          select: {
-            todos: { where: { completed: false } },
-          },
-        },
-      },
       orderBy,
-      // If sorting by counts, fetch all then paginate client-side
-      ...(needsClientSort ? {} : { skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE }),
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
     }),
   ]);
-
-  // Get closed counts separately (Prisma doesn't support multiple conditional counts)
-  const projectIds = projects.map((p) => p.id);
-  const closedCounts = await db.todo.groupBy({
-    by: ["projectId"],
-    where: {
-      projectId: { in: projectIds },
-      completed: true,
-    },
-    _count: true,
-  });
-
-  const closedCountMap = new Map(closedCounts.map((c) => [c.projectId, c._count]));
-
-  let projectsWithCounts = projects.map((p) => ({
-    ...p,
-    openCount: p._count.todos,
-    closedCount: closedCountMap.get(p.id) ?? 0,
-  }));
-
-  // Client-side sort for computed fields
-  if (needsClientSort) {
-    const field = sort === "open" ? "openCount" : "closedCount";
-    projectsWithCounts.sort((a, b) =>
-      order === "asc" ? a[field] - b[field] : b[field] - a[field]
-    );
-    // Paginate after sorting
-    projectsWithCounts = projectsWithCounts.slice(
-      (page - 1) * PAGE_SIZE,
-      page * PAGE_SIZE
-    );
-  }
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return {
-    projects: projectsWithCounts,
+    items,
     currentUserId: userId,
     pagination: { page, pageSize: PAGE_SIZE, total, totalPages },
     sort,
@@ -157,20 +151,24 @@ export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const { id } = parseFormDataOrThrow(formData, deleteByIdSchema);
 
-  await db.project.delete({ where: { id, ownerId: userId } });
-  log.info({ projectId: id }, "project_deleted");
+{% if ownerField %}
+  await db.{{ prismaModel }}.delete({ where: { id, {{ ownerField }}: userId } });
+{% else %}
+  await db.{{ prismaModel }}.delete({ where: { id } });
+{% endif %}
+  log.info({ {{ entityLabel }}Id: id }, "{{ entityLabel }}_deleted");
 
-  return redirect("/projects");
+  return redirect("{{ basePath }}");
 }
 
 export function meta() {
   return [
-    { title: "Projects" },
-    { name: "description", content: "Manage your projects" },
+    { title: "{{ entityNamePlural }}" },
+    { name: "description", content: "Manage your {{ entityLabelPlural }}" },
   ];
 }
 
-function DeleteProjectButton({ projectId, projectName }: { projectId: string; projectName: string }) {
+function Delete{{ entityName }}Button({ itemId, itemName }: { itemId: string; itemName: string }) {
   const fetcher = useFetcher();
 
   return (
@@ -182,13 +180,13 @@ function DeleteProjectButton({ projectId, projectName }: { projectId: string; pr
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <ConfirmDialog
-          title={`Delete "${projectName}"?`}
-          description="This action cannot be undone. All todos in this project will also be deleted."
+          title={`Delete "${itemName}"?`}
+          description="This action cannot be undone."
           confirmLabel="Delete"
           variant="destructive"
           onConfirm={() => {
             fetcher.submit(
-              { intent: "deleteProject", id: projectId },
+              { intent: "delete", id: itemId },
               { method: "post" }
             );
           }}
@@ -211,7 +209,7 @@ function buildPageUrl(page: number, searchParams: URLSearchParams) {
     params.set("page", String(page));
   }
   const qs = params.toString();
-  return qs ? `?${qs}` : "/projects";
+  return qs ? `?${qs}` : BASE_PATH;
 }
 
 function SortableHeader({
@@ -229,7 +227,6 @@ function SortableHeader({
   children: React.ReactNode;
   className?: string;
 }) {
-  // Three states: unsorted -> asc -> desc -> unsorted
   const isActive = currentSort === field;
   let nextOrder: SortOrder | null;
   if (!isActive) {
@@ -237,11 +234,11 @@ function SortableHeader({
   } else if (currentOrder === "asc") {
     nextOrder = "desc";
   } else {
-    nextOrder = null; // Reset to default
+    nextOrder = null;
   }
 
   const params = new URLSearchParams(searchParams);
-  params.delete("page"); // Reset to page 1 on sort change
+  params.delete("page");
   if (nextOrder === null) {
     params.delete("sort");
     params.delete("order");
@@ -249,7 +246,7 @@ function SortableHeader({
     params.set("sort", field);
     params.set("order", nextOrder);
   }
-  const href = params.toString() ? `?${params.toString()}` : "/projects";
+  const href = params.toString() ? `?${params.toString()}` : BASE_PATH;
 
   return (
     <Link to={href} className={`flex items-center gap-1 hover:text-foreground ${className || ""}`}>
@@ -265,10 +262,10 @@ function SortableHeader({
   );
 }
 
-export default function ProjectsPage({ loaderData }: Route.ComponentProps) {
+export default function {{ entityNamePlural }}ListPage({ loaderData }: Route.ComponentProps) {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
-  const { projects, currentUserId, pagination, sort, order } = loaderData;
+  const { items, currentUserId, pagination, sort, order } = loaderData;
   const { page, total, totalPages, pageSize } = pagination;
   const startIndex = (page - 1) * pageSize;
 
@@ -276,25 +273,25 @@ export default function ProjectsPage({ loaderData }: Route.ComponentProps) {
     <div className="p-6 md:p-8">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Projects</h1>
-          <p className="text-muted-foreground">Organize your todos into projects</p>
+          <h1 className="text-3xl font-bold mb-2">{{ entityNamePlural }}</h1>
+          <p className="text-muted-foreground">Manage your {{ entityLabelPlural }}</p>
         </div>
 
-        <div id="projects-toolbar" className="flex gap-2 mb-6">
-          <SearchBar placeholder="Search projects..." defaultValue={query} />
+        <div className="flex gap-2 mb-6">
+          <SearchBar placeholder="Search {{ entityLabelPlural }}..." defaultValue={query} />
           <Button asChild>
-            <Link to="/projects/new">
+            <Link to="{{ basePath }}/new">
               <Plus className="h-4 w-4 mr-2" />
-              New Project
+              New {{ entityLabel | capitalize }}
             </Link>
           </Button>
         </div>
 
-        {projects.length === 0 && total === 0 ? (
+        {items.length === 0 && total === 0 ? (
           <div className="text-center text-muted-foreground py-12">
-            <Folder className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <{{ icon }} className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p className="text-lg">
-              {query ? "No projects match your search." : "No projects yet. Create one to get started!"}
+              {query ? "No {{ entityLabelPlural }} match your search." : "No {{ entityLabelPlural }} yet. Create one to get started!"}
             </p>
           </div>
         ) : (
@@ -304,73 +301,64 @@ export default function ProjectsPage({ loaderData }: Route.ComponentProps) {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12">#</TableHead>
-                    <TableHead>
-                      <SortableHeader field="name" currentSort={sort} currentOrder={order} searchParams={searchParams}>
-                        Name
+{% for col in columns %}
+{% if col.sortable %}
+                    <TableHead{% if col.hiddenOnMobile %} className="hidden md:table-cell"{% endif %}>
+                      <SortableHeader field="{{ col.field }}" currentSort={sort} currentOrder={order} searchParams={searchParams}>
+                        {{ col.label }}
                       </SortableHeader>
                     </TableHead>
-                    <TableHead className="hidden md:table-cell">Description</TableHead>
-                    <TableHead className="text-center">
-                      <SortableHeader field="open" currentSort={sort} currentOrder={order} searchParams={searchParams} className="justify-center">
-                        Open
-                      </SortableHeader>
-                    </TableHead>
-                    <TableHead className="text-center">
-                      <SortableHeader field="closed" currentSort={sort} currentOrder={order} searchParams={searchParams} className="justify-center">
-                        Closed
-                      </SortableHeader>
-                    </TableHead>
-                    <TableHead className="hidden md:table-cell">
-                      <SortableHeader field="createdAt" currentSort={sort} currentOrder={order} searchParams={searchParams}>
-                        Created
-                      </SortableHeader>
-                    </TableHead>
-                    <TableHead className=""></TableHead>
+{% else %}
+                    <TableHead{% if col.hiddenOnMobile %} className="hidden md:table-cell"{% endif %}>{{ col.label }}</TableHead>
+{% endif %}
+{% endfor %}
+                    <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {projects.map((project, idx) => {
-                    const isOwner = project.ownerId === currentUserId;
+                  {items.map((item, idx) => {
+{% if ownerField %}
+                    const isOwner = item.{{ ownerField }} === currentUserId;
+{% endif %}
                     return (
-                      <TableRow key={project.id}>
+                      <TableRow key={item.id}>
                         <TableCell className="font-medium text-muted-foreground">
                           {startIndex + idx + 1}
                         </TableCell>
-                        <TableCell>
+{% for col in columns %}
+{% if col.link %}
+                        <TableCell{% if col.hiddenOnMobile %} className="hidden md:table-cell"{% endif %}>
                           <Link
-                            to={`/projects/${project.id}`}
+                            to={`{{ basePath }}/${item.id}`}
                             className="hover:underline font-medium"
                           >
-                            {project.name}
+                            {item.{{ col.field }}}
                           </Link>
-                          {!isOwner && (
-                            <span className="ml-2 text-xs text-muted-foreground">
-                              (by {project.owner.name})
-                            </span>
-                          )}
                         </TableCell>
-                        <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                          {project.description || "-"}
+{% elif col.type == 'date' %}
+                        <TableCell className="{% if col.hiddenOnMobile %}hidden md:table-cell {% endif %}text-sm text-muted-foreground">
+                          {new Date(item.{{ col.field }}).toLocaleDateString()}
                         </TableCell>
-                        <TableCell className="text-center text-sm">
-                          {project.openCount}
+{% else %}
+                        <TableCell className="{% if col.hiddenOnMobile %}hidden md:table-cell {% endif %}text-sm text-muted-foreground">
+                          {item.{{ col.field }} || "-"}
                         </TableCell>
-                        <TableCell className="text-center text-sm">
-                          {project.closedCount}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                          {new Date(project.createdAt).toLocaleDateString()}
-                        </TableCell>
+{% endif %}
+{% endfor %}
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             <Button variant="ghost" size="sm" asChild>
-                              <Link to={`/projects/${project.id}`}>
+                              <Link to={`{{ basePath }}/${item.id}`}>
                                 <Pencil className="h-4 w-4" />
                               </Link>
                             </Button>
+{% if ownerField %}
                             {isOwner && (
-                              <DeleteProjectButton projectId={project.id} projectName={project.name} />
+                              <Delete{{ entityName }}Button itemId={item.id} itemName={item.{{ columns[0].field }}} />
                             )}
+{% else %}
+                            <Delete{{ entityName }}Button itemId={item.id} itemName={item.{{ columns[0].field }}} />
+{% endif %}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -387,7 +375,7 @@ export default function ProjectsPage({ loaderData }: Route.ComponentProps) {
             />
 
             <div className="text-sm text-muted-foreground text-center">
-              Showing {startIndex + 1} to {Math.min(startIndex + pageSize, total)} of {total} projects
+              Showing {startIndex + 1} to {Math.min(startIndex + pageSize, total)} of {total} {{ entityLabelPlural }}
             </div>
           </div>
         )}
