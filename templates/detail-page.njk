@@ -1,0 +1,448 @@
+{#
+  Template: Detail Page (CRUD)
+
+  A detail page for viewing, editing, and deleting a single entity.
+  Includes inline edit form and delete confirmation.
+
+  Required fields:
+    - filename: Route filename without extension (e.g., "user-detail")
+    - entityName: Singular PascalCase (e.g., "User")
+    - entityLabel: Singular lowercase (e.g., "user")
+    - basePath: URL base path (e.g., "/users")
+    - listPath: URL to return to after delete (e.g., "/users")
+    - prismaModel: Prisma model name (e.g., "user")
+    - idParam: URL param name for ID (default: "id")
+    - displayFields: Array of fields to display
+        - field: Field name in DB (e.g., "name", "email")
+        - label: Display label (e.g., "Name", "Email")
+        - type: "string" | "date" | "boolean" | "text" (multiline)
+    - editFields: Array of editable fields (same structure as form-all-inputs fields)
+
+  Optional fields:
+    - ownerField: Field name for ownership check (e.g., "ownerId"), or null
+    - icon: Lucide icon name (e.g., "User")
+    - showEditLink: boolean - if true, shows link to separate edit page instead of inline form
+    - editPath: URL pattern for edit page (required if showEditLink, e.g., "/users/{id}/edit")
+
+  Example usage:
+    {
+      "filename": "user-detail",
+      "entityName": "User",
+      "entityLabel": "user",
+      "basePath": "/users",
+      "listPath": "/users",
+      "prismaModel": "user",
+      "idParam": "id",
+      "displayFields": [
+        { "field": "name", "label": "Name", "type": "string" },
+        { "field": "email", "label": "Email", "type": "string" },
+        { "field": "bio", "label": "Bio", "type": "text" },
+        { "field": "createdAt", "label": "Created", "type": "date" }
+      ],
+      "editFields": [
+        { "name": "name", "label": "Name", "type": "text", "required": true },
+        { "name": "email", "label": "Email", "type": "email", "required": true },
+        { "name": "bio", "label": "Bio", "type": "textarea", "required": false }
+      ],
+      "ownerField": null,
+      "icon": "User"
+    }
+#}
+/*+++
+intent = "{{ entityName }} detail page with edit and delete"
++++*/
+import { useState } from "react";
+import type { Route } from "./+types/{{ filename }}";
+import type { RouteHandle, BreadcrumbItem } from "~/components/page-header";
+import { Form, Link, redirect, useActionData } from "react-router";
+import { z } from "zod";
+import { Pencil, Trash2{% if icon %}, {{ icon }}{% endif %} } from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+{% set hasCheckbox = false %}
+{% for field in editFields %}
+{% if field.type == 'checkbox' or field.type == 'checkboxes' %}
+{% set hasCheckbox = true %}
+{% endif %}
+{% endfor %}
+{% if hasCheckbox %}
+import { Checkbox } from "~/components/ui/checkbox";
+{% endif %}
+import { ConfirmDialog } from "~/components/confirm-dialog";
+import { db } from "~/db/client";
+import { auth } from "~/lib/auth.server";
+import { parseForm, useFormValidation } from "~/lib/utils";
+import { log } from "~/lib/logger.server";
+
+export const handle: RouteHandle = {
+  breadcrumb: (data): BreadcrumbItem[] => {
+    const { item } = data as { item: { {{ displayFields[0].field }}: string } };
+    return [
+      { label: "{{ entityName }}s", href: "{{ listPath }}" },
+      { label: item.{{ displayFields[0].field }} },
+    ];
+  },
+};
+
+// =============================================================================
+// Schema
+// =============================================================================
+
+const update{{ entityName }}Schema = z.object({
+{% for field in editFields %}
+{% if field.type == 'email' %}
+  {{ field.name }}: z.string(){% if field.required != false %}.email("Invalid email address"){% else %}.email("Invalid email address").optional().or(z.literal("")){% endif %},
+{% elif field.type == 'number' %}
+  {{ field.name }}: z.coerce.number(){% if field.min is defined %}.min({{ field.min }}){% endif %}{% if field.max is defined %}.max({{ field.max }}){% endif %}{% if field.required == false %}.optional(){% endif %},
+{% elif field.type == 'checkbox' %}
+  {{ field.name }}: z.string().optional().transform((v) => v === "on"),
+{% elif field.type == 'checkboxes' %}
+  {{ field.name }}: z.array(z.string()){% if field.required == false %}.optional(){% else %}.min(1, "Select at least one option"){% endif %},
+{% elif field.type == 'select' %}
+  {{ field.name }}: z.enum([{% for opt in field.options %}"{{ opt.value }}"{% if not loop.last %}, {% endif %}{% endfor %}]){% if field.required == false %}.optional(){% endif %},
+{% elif field.type == 'date' %}
+  {{ field.name }}: z.string(){% if field.required == false %}.optional(){% else %}.min(1, "Date is required"){% endif %},
+{% elif field.type == 'textarea' %}
+  {{ field.name }}: z.string(){% if field.minLength is defined %}.min({{ field.minLength }}, "Too short"){% elif field.required != false %}.min(1, "Required"){% endif %}{% if field.maxLength is defined %}.max({{ field.maxLength }}, "Too long"){% endif %}{% if field.required == false %}.optional(){% endif %},
+{% else %}
+  {{ field.name }}: z.string(){% if field.minLength is defined %}.min({{ field.minLength }}, "Too short"){% elif field.required != false %}.min(1, "Required"){% endif %}{% if field.maxLength is defined %}.max({{ field.maxLength }}, "Too long"){% endif %}{% if field.required == false %}.optional(){% endif %},
+{% endif %}
+{% endfor %}
+});
+
+// =============================================================================
+// Loader
+// =============================================================================
+
+export async function loader({ params, request }: Route.LoaderArgs) {
+  const session = await auth.api.getSession({ headers: request.headers });
+  const userId = session!.user.id;
+
+  const item = await db.{{ prismaModel }}.findUnique({
+    where: { id: params.{{ idParam | default('id') }} },
+  });
+
+  if (!item) {
+    throw new Response("Not Found", { status: 404 });
+  }
+
+{% if ownerField %}
+  // Check ownership
+  if (item.{{ ownerField }} !== userId) {
+    throw new Response("Forbidden", { status: 403 });
+  }
+{% endif %}
+
+  return { item, currentUserId: userId };
+}
+
+// =============================================================================
+// Action
+// =============================================================================
+
+export async function action({ request, params }: Route.ActionArgs) {
+  const session = await auth.api.getSession({ headers: request.headers });
+  const userId = session!.user.id;
+
+  const formData = await request.formData();
+  const intent = formData.get("intent");
+
+{% if ownerField %}
+  // Verify ownership before any action
+  const item = await db.{{ prismaModel }}.findUnique({
+    where: { id: params.{{ idParam | default('id') }} },
+  });
+  if (!item || item.{{ ownerField }} !== userId) {
+    throw new Response("Forbidden", { status: 403 });
+  }
+{% endif %}
+
+  switch (intent) {
+    case "update": {
+      const result = parseForm(update{{ entityName }}Schema, formData);
+      if (!result.success) {
+        return { errors: result.error.flatten().fieldErrors };
+      }
+
+      await db.{{ prismaModel }}.update({
+        where: { id: params.{{ idParam | default('id') }} },
+        data: {
+{% for field in editFields %}
+          {{ field.name }}: result.data.{{ field.name }},
+{% endfor %}
+        },
+      });
+
+      log.info({ {{ entityLabel }}Id: params.{{ idParam | default('id') }}, byUserId: userId }, "{{ entityLabel }}_updated");
+      return { success: true };
+    }
+
+    case "delete": {
+      await db.{{ prismaModel }}.delete({
+        where: { id: params.{{ idParam | default('id') }} },
+      });
+
+      log.info({ {{ entityLabel }}Id: params.{{ idParam | default('id') }}, byUserId: userId }, "{{ entityLabel }}_deleted");
+      return redirect("{{ listPath }}");
+    }
+
+    default:
+      throw new Response("Invalid intent", { status: 400 });
+  }
+}
+
+// =============================================================================
+// Meta
+// =============================================================================
+
+export function meta({ data }: Route.MetaArgs) {
+  const title = data?.item?.{{ displayFields[0].field }} ?? "{{ entityName }}";
+  return [
+    { title },
+    { name: "description", content: "View {{ entityLabel }} details" },
+  ];
+}
+
+// =============================================================================
+// Component
+// =============================================================================
+
+export default function {{ entityName }}DetailPage({ loaderData }: Route.ComponentProps) {
+  const { item } = loaderData;
+  const [editing, setEditing] = useState(false);
+  const actionData = useActionData<typeof action>();
+  const { onSubmit, errors } = useFormValidation(update{{ entityName }}Schema, actionData?.errors);
+
+  // Close edit form on successful update
+  if (actionData?.success && editing) {
+    setEditing(false);
+  }
+
+  return (
+    <div className="p-6 md:p-8">
+      <div className="max-w-4xl mx-auto">
+        {editing ? (
+          <Form method="post" className="space-y-6" onSubmit={onSubmit}>
+            <input type="hidden" name="intent" value="update" />
+
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-2xl font-bold">Edit {{ entityName }}</h1>
+            </div>
+
+{% for field in editFields %}
+{% if field.type == 'text' or field.type == 'email' or field.type == 'password' %}
+            <div className="space-y-2">
+              <Label htmlFor="{{ field.name }}">{{ field.label }}{% if field.required == false %} <span className="text-muted-foreground">(optional)</span>{% endif %}</Label>
+              <Input
+                id="{{ field.name }}"
+                name="{{ field.name }}"
+                type="{{ field.type }}"
+{% if field.placeholder %}
+                placeholder="{{ field.placeholder }}"
+{% endif %}
+                defaultValue={item.{{ field.name }} ?? ""}
+{% if field.required != false %}
+                required
+{% endif %}
+              />
+              {errors?.{{ field.name }} && (
+                <p className="text-sm text-destructive">{errors.{{ field.name }}[0]}</p>
+              )}
+            </div>
+
+{% elif field.type == 'number' %}
+            <div className="space-y-2">
+              <Label htmlFor="{{ field.name }}">{{ field.label }}{% if field.required == false %} <span className="text-muted-foreground">(optional)</span>{% endif %}</Label>
+              <Input
+                id="{{ field.name }}"
+                name="{{ field.name }}"
+                type="number"
+{% if field.min is defined %}
+                min={{ "{" }}{{ field.min }}{{ "}" }}
+{% endif %}
+{% if field.max is defined %}
+                max={{ "{" }}{{ field.max }}{{ "}" }}
+{% endif %}
+                defaultValue={item.{{ field.name }} ?? ""}
+{% if field.required != false %}
+                required
+{% endif %}
+              />
+              {errors?.{{ field.name }} && (
+                <p className="text-sm text-destructive">{errors.{{ field.name }}[0]}</p>
+              )}
+            </div>
+
+{% elif field.type == 'textarea' %}
+            <div className="space-y-2">
+              <Label htmlFor="{{ field.name }}">{{ field.label }}{% if field.required == false %} <span className="text-muted-foreground">(optional)</span>{% endif %}</Label>
+              <textarea
+                id="{{ field.name }}"
+                name="{{ field.name }}"
+                className="flex min-h-[120px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+{% if field.placeholder %}
+                placeholder="{{ field.placeholder }}"
+{% endif %}
+                defaultValue={item.{{ field.name }} ?? ""}
+{% if field.required != false %}
+                required
+{% endif %}
+              />
+              {errors?.{{ field.name }} && (
+                <p className="text-sm text-destructive">{errors.{{ field.name }}[0]}</p>
+              )}
+            </div>
+
+{% elif field.type == 'date' %}
+            <div className="space-y-2">
+              <Label htmlFor="{{ field.name }}">{{ field.label }}{% if field.required == false %} <span className="text-muted-foreground">(optional)</span>{% endif %}</Label>
+              <Input
+                id="{{ field.name }}"
+                name="{{ field.name }}"
+                type="date"
+                defaultValue={item.{{ field.name }} ? new Date(item.{{ field.name }}).toISOString().split('T')[0] : ""}
+{% if field.required != false %}
+                required
+{% endif %}
+              />
+              {errors?.{{ field.name }} && (
+                <p className="text-sm text-destructive">{errors.{{ field.name }}[0]}</p>
+              )}
+            </div>
+
+{% elif field.type == 'checkbox' %}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="{{ field.name }}"
+                name="{{ field.name }}"
+                defaultChecked={item.{{ field.name }} === true}
+              />
+              <Label htmlFor="{{ field.name }}" className="font-normal cursor-pointer">
+                {{ field.label }}
+              </Label>
+            </div>
+
+{% elif field.type == 'select' %}
+            <div className="space-y-2">
+              <Label htmlFor="{{ field.name }}">{{ field.label }}{% if field.required == false %} <span className="text-muted-foreground">(optional)</span>{% endif %}</Label>
+              <select
+                id="{{ field.name }}"
+                name="{{ field.name }}"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                defaultValue={item.{{ field.name }} ?? ""}
+{% if field.required != false %}
+                required
+{% endif %}
+              >
+{% if field.required == false %}
+                <option value="">Select...</option>
+{% endif %}
+{% for opt in field.options %}
+                <option value="{{ opt.value }}">{{ opt.label }}</option>
+{% endfor %}
+              </select>
+              {errors?.{{ field.name }} && (
+                <p className="text-sm text-destructive">{errors.{{ field.name }}[0]}</p>
+              )}
+            </div>
+
+{% endif %}
+{% endfor %}
+            <div className="flex gap-3 pt-4">
+              <Button type="submit">Save Changes</Button>
+              <Button type="button" variant="outline" onClick={() => setEditing(false)}>
+                Cancel
+              </Button>
+            </div>
+          </Form>
+        ) : (
+          <>
+            {/* Header */}
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+{% if icon %}
+                <{{ icon }} className="h-8 w-8 text-muted-foreground" />
+{% endif %}
+                <h1 className="text-3xl font-bold">{item.{{ displayFields[0].field }}}</h1>
+              </div>
+              <div className="flex items-center gap-2">
+{% if showEditLink %}
+                <Button variant="outline" asChild>
+                  <Link to={`{{ editPath | replace('{id}', '${item.id}') }}`}>
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Edit
+                  </Link>
+                </Button>
+{% else %}
+                <Button variant="outline" onClick={() => setEditing(true)}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+{% endif %}
+                <ConfirmDialog
+                  title="Delete {{ entityName }}?"
+                  description="This action cannot be undone. This will permanently delete this {{ entityLabel }}."
+                  confirmLabel="Delete"
+                  variant="destructive"
+                  onConfirm={() => {
+                    const form = document.createElement("form");
+                    form.method = "post";
+                    const input = document.createElement("input");
+                    input.type = "hidden";
+                    input.name = "intent";
+                    input.value = "delete";
+                    form.appendChild(input);
+                    document.body.appendChild(form);
+                    form.submit();
+                  }}
+                >
+                  <Button variant="destructive">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
+                </ConfirmDialog>
+              </div>
+            </div>
+
+            {/* Details */}
+            <div className="rounded-lg border p-6">
+              <dl className="grid grid-cols-1 md:grid-cols-2 gap-6">
+{% for field in displayFields %}
+{% if field.type == 'text' %}
+                <div className="md:col-span-2">
+                  <dt className="text-sm font-medium text-muted-foreground mb-1">{{ field.label }}</dt>
+                  <dd className="whitespace-pre-wrap">{item.{{ field.field }} || <span className="text-muted-foreground">-</span>}</dd>
+                </div>
+{% elif field.type == 'date' %}
+                <div>
+                  <dt className="text-sm font-medium text-muted-foreground mb-1">{{ field.label }}</dt>
+                  <dd>{item.{{ field.field }} ? new Date(item.{{ field.field }}).toLocaleDateString() : <span className="text-muted-foreground">-</span>}</dd>
+                </div>
+{% elif field.type == 'boolean' %}
+                <div>
+                  <dt className="text-sm font-medium text-muted-foreground mb-1">{{ field.label }}</dt>
+                  <dd>{item.{{ field.field }} ? "Yes" : "No"}</dd>
+                </div>
+{% else %}
+                <div>
+                  <dt className="text-sm font-medium text-muted-foreground mb-1">{{ field.label }}</dt>
+                  <dd>{item.{{ field.field }} || <span className="text-muted-foreground">-</span>}</dd>
+                </div>
+{% endif %}
+{% endfor %}
+              </dl>
+            </div>
+
+            {/* Back link */}
+            <div className="mt-6">
+              <Button variant="ghost" asChild>
+                <Link to="{{ listPath }}">← Back to list</Link>
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

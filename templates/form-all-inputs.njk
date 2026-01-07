@@ -1,0 +1,451 @@
+{#
+  Template: Form with All Input Types
+
+  A comprehensive form page with various input types.
+  Demonstrates validation patterns and all available field types.
+
+  Required fields:
+    - filename: Route filename without extension (e.g., "user-edit")
+    - pageTitle: Page title (e.g., "Edit User")
+    - pageDescription: Meta description (e.g., "Edit user details")
+    - breadcrumbLabel: Breadcrumb text (e.g., "Edit User")
+    - breadcrumbHref: Breadcrumb URL (e.g., "/users/edit")
+    - schemaName: Zod schema name to create (e.g., "editUserSchema")
+    - cancelUrl: Where to go on cancel (e.g., "/users")
+    - successRedirect: Where to redirect after success (e.g., "/users")
+    - fields: Array of field configs (see below)
+
+  Field config options:
+    - name: Field name in form/schema (e.g., "email")
+    - label: Display label (e.g., "Email Address")
+    - type: Input type - one of:
+        "text"      - Standard text input
+        "email"     - Email input
+        "password"  - Password input
+        "number"    - Number input
+        "textarea"  - Multi-line text
+        "checkbox"  - Single checkbox (boolean)
+        "checkboxes" - Multiple checkboxes (array)
+        "select"    - Dropdown select (native HTML)
+        "date"      - Date input
+        "hidden"    - Hidden field
+    - required: boolean (default true)
+    - placeholder: Placeholder text (optional)
+    - defaultValue: Default value (optional, use for edit forms)
+    - options: For select/checkboxes - array of { value, label }
+    - min: For number - minimum value
+    - max: For number - maximum value
+    - minLength: For text/textarea - minimum length
+    - maxLength: For text/textarea - maximum length
+    - helpText: Helper text below the field (optional)
+
+  Optional:
+    - isEditForm: boolean - if true, loads existing data (needs prismaModel + idParam)
+    - prismaModel: Prisma model name (required if isEditForm)
+    - idParam: URL param name for ID (default: "id")
+    - entityLabel: Singular lowercase label (e.g., "user") for messages
+
+  Example usage:
+    {
+      "filename": "user-edit",
+      "pageTitle": "Edit User",
+      "pageDescription": "Edit user account details",
+      "breadcrumbLabel": "Edit User",
+      "breadcrumbHref": "/users/edit",
+      "schemaName": "editUserSchema",
+      "cancelUrl": "/users",
+      "successRedirect": "/users",
+      "isEditForm": true,
+      "prismaModel": "user",
+      "entityLabel": "user",
+      "fields": [
+        { "name": "name", "label": "Name", "type": "text", "required": true, "minLength": 1, "maxLength": 100 },
+        { "name": "email", "label": "Email", "type": "email", "required": true },
+        { "name": "bio", "label": "Bio", "type": "textarea", "required": false, "maxLength": 500, "placeholder": "Tell us about yourself..." },
+        { "name": "age", "label": "Age", "type": "number", "min": 0, "max": 150 },
+        { "name": "isActive", "label": "Active", "type": "checkbox" },
+        { "name": "role", "label": "Role", "type": "select", "options": [{"value": "user", "label": "User"}, {"value": "admin", "label": "Admin"}] },
+        { "name": "notifications", "label": "Notifications", "type": "checkboxes", "options": [{"value": "email", "label": "Email"}, {"value": "sms", "label": "SMS"}] }
+      ]
+    }
+#}
+/*+++
+intent = "{{ pageDescription }}"
++++*/
+import type { Route } from "./+types/{{ filename }}";
+import type { RouteHandle } from "~/components/page-header";
+import { Form, Link, redirect, useActionData } from "react-router";
+import { z } from "zod";
+import { db } from "~/db/client";
+import { auth } from "~/lib/auth.server";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+{% set hasCheckbox = false %}
+{% for field in fields %}
+{% if field.type == 'checkbox' or field.type == 'checkboxes' %}
+{% set hasCheckbox = true %}
+{% endif %}
+{% endfor %}
+{% if hasCheckbox %}
+import { Checkbox } from "~/components/ui/checkbox";
+{% endif %}
+import { parseForm, useFormValidation } from "~/lib/utils";
+import { log } from "~/lib/logger.server";
+
+export const handle: RouteHandle = {
+  breadcrumb: { label: "{{ breadcrumbLabel }}", href: "{{ breadcrumbHref }}" },
+};
+
+// =============================================================================
+// Schema
+// =============================================================================
+
+export const {{ schemaName }} = z.object({
+{% for field in fields %}
+{% if field.type == 'hidden' %}
+  {{ field.name }}: z.string(),
+{% elif field.type == 'email' %}
+  {{ field.name }}: z.string(){% if field.required != false %}.email("Invalid email address"){% else %}.email("Invalid email address").optional().or(z.literal("")){% endif %},
+{% elif field.type == 'number' %}
+  {{ field.name }}: z.coerce.number(){% if field.min is defined %}.min({{ field.min }}){% endif %}{% if field.max is defined %}.max({{ field.max }}){% endif %}{% if field.required == false %}.optional(){% endif %},
+{% elif field.type == 'checkbox' %}
+  {{ field.name }}: z.string().optional().transform((v) => v === "on"),
+{% elif field.type == 'checkboxes' %}
+  {{ field.name }}: z.array(z.string()){% if field.required == false %}.optional(){% else %}.min(1, "Select at least one option"){% endif %},
+{% elif field.type == 'select' %}
+  {{ field.name }}: z.enum([{% for opt in field.options %}"{{ opt.value }}"{% if not loop.last %}, {% endif %}{% endfor %}]){% if field.required == false %}.optional(){% endif %},
+{% elif field.type == 'date' %}
+  {{ field.name }}: z.string(){% if field.required == false %}.optional(){% else %}.min(1, "Date is required"){% endif %},
+{% elif field.type == 'textarea' %}
+  {{ field.name }}: z.string(){% if field.minLength is defined %}.min({{ field.minLength }}, "Too short"){% elif field.required != false %}.min(1, "Required"){% endif %}{% if field.maxLength is defined %}.max({{ field.maxLength }}, "Too long"){% endif %}{% if field.required == false %}.optional(){% endif %},
+{% else %}
+  {{ field.name }}: z.string(){% if field.minLength is defined %}.min({{ field.minLength }}, "Too short"){% elif field.required != false %}.min(1, "Required"){% endif %}{% if field.maxLength is defined %}.max({{ field.maxLength }}, "Too long"){% endif %}{% if field.required == false %}.optional(){% endif %},
+{% endif %}
+{% endfor %}
+});
+
+type FormData = z.infer<typeof {{ schemaName }}>;
+
+// =============================================================================
+// Loader
+// =============================================================================
+
+export async function loader({ request{% if isEditForm %}, params{% endif %} }: Route.LoaderArgs) {
+  const session = await auth.api.getSession({ headers: request.headers });
+  const userId = session!.user.id;
+
+{% if isEditForm %}
+  const item = await db.{{ prismaModel }}.findUnique({
+    where: { id: params.{{ idParam | default('id') }} },
+  });
+
+  if (!item) {
+    throw new Response("Not Found", { status: 404 });
+  }
+
+  return { currentUserId: userId, item };
+{% else %}
+  return { currentUserId: userId };
+{% endif %}
+}
+
+// =============================================================================
+// Action
+// =============================================================================
+
+export async function action({ request{% if isEditForm %}, params{% endif %} }: Route.ActionArgs) {
+  const session = await auth.api.getSession({ headers: request.headers });
+  const userId = session!.user.id;
+
+  const formData = await request.formData();
+  const result = parseForm({{ schemaName }}, formData);
+
+  if (!result.success) {
+    return { errors: result.error.flatten().fieldErrors };
+  }
+
+{% if isEditForm %}
+  // TODO: Add authorization check if needed
+  await db.{{ prismaModel }}.update({
+    where: { id: params.{{ idParam | default('id') }} },
+    data: {
+{% for field in fields %}
+{% if field.type != 'hidden' %}
+      {{ field.name }}: result.data.{{ field.name }},
+{% endif %}
+{% endfor %}
+    },
+  });
+
+  log.info({ {{ entityLabel | default('item') }}Id: params.{{ idParam | default('id') }}, byUserId: userId }, "{{ entityLabel | default('item') }}_updated");
+{% else %}
+  // TODO: Create the record
+  await db.{{ prismaModel }}.create({
+    data: {
+{% for field in fields %}
+{% if field.type != 'hidden' %}
+      {{ field.name }}: result.data.{{ field.name }},
+{% endif %}
+{% endfor %}
+      // TODO: Add any additional fields (e.g., ownerId: userId)
+    },
+  });
+
+  log.info({ byUserId: userId }, "{{ entityLabel | default('item') }}_created");
+{% endif %}
+
+  return redirect("{{ successRedirect }}");
+}
+
+// =============================================================================
+// Meta
+// =============================================================================
+
+export function meta() {
+  return [
+    { title: "{{ pageTitle }}" },
+    { name: "description", content: "{{ pageDescription }}" },
+  ];
+}
+
+// =============================================================================
+// Component
+// =============================================================================
+
+export default function {{ filename | replace("-", "") | capitalize }}Page({ loaderData }: Route.ComponentProps) {
+{% if isEditForm %}
+  const { item } = loaderData;
+{% endif %}
+  const actionData = useActionData<typeof action>();
+  const { onSubmit, errors } = useFormValidation({{ schemaName }}, actionData?.errors);
+
+  return (
+    <div className="p-6 md:p-8">
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-2xl font-bold mb-6">{{ pageTitle }}</h1>
+
+        <Form method="post" className="space-y-6" onSubmit={onSubmit}>
+{% for field in fields %}
+{% if field.type == 'hidden' %}
+          <input type="hidden" name="{{ field.name }}" value={% if isEditForm %}{item.{{ field.name }}}{% else %}"{{ field.defaultValue | default('') }}"{% endif %} />
+
+{% elif field.type == 'text' or field.type == 'email' or field.type == 'password' %}
+          {/* {{ field.label }} */}
+          <div className="space-y-2">
+            <Label htmlFor="{{ field.name }}">{{ field.label }}{% if field.required == false %} <span className="text-muted-foreground">(optional)</span>{% endif %}</Label>
+            <Input
+              id="{{ field.name }}"
+              name="{{ field.name }}"
+              type="{{ field.type }}"
+{% if field.placeholder %}
+              placeholder="{{ field.placeholder }}"
+{% endif %}
+{% if isEditForm and field.type != 'password' %}
+              defaultValue={item.{{ field.name }} ?? ""}
+{% elif field.defaultValue %}
+              defaultValue="{{ field.defaultValue }}"
+{% endif %}
+{% if field.required != false %}
+              required
+{% endif %}
+{% if field.maxLength %}
+              maxLength={{ "{" }}{{ field.maxLength }}{{ "}" }}
+{% endif %}
+            />
+{% if field.helpText %}
+            <p className="text-sm text-muted-foreground">{{ field.helpText }}</p>
+{% endif %}
+            {errors?.{{ field.name }} && (
+              <p className="text-sm text-destructive">{errors.{{ field.name }}[0]}</p>
+            )}
+          </div>
+
+{% elif field.type == 'number' %}
+          {/* {{ field.label }} */}
+          <div className="space-y-2">
+            <Label htmlFor="{{ field.name }}">{{ field.label }}{% if field.required == false %} <span className="text-muted-foreground">(optional)</span>{% endif %}</Label>
+            <Input
+              id="{{ field.name }}"
+              name="{{ field.name }}"
+              type="number"
+{% if field.min is defined %}
+              min={{ "{" }}{{ field.min }}{{ "}" }}
+{% endif %}
+{% if field.max is defined %}
+              max={{ "{" }}{{ field.max }}{{ "}" }}
+{% endif %}
+{% if isEditForm %}
+              defaultValue={item.{{ field.name }} ?? ""}
+{% elif field.defaultValue %}
+              defaultValue="{{ field.defaultValue }}"
+{% endif %}
+{% if field.placeholder %}
+              placeholder="{{ field.placeholder }}"
+{% endif %}
+{% if field.required != false %}
+              required
+{% endif %}
+            />
+{% if field.helpText %}
+            <p className="text-sm text-muted-foreground">{{ field.helpText }}</p>
+{% endif %}
+            {errors?.{{ field.name }} && (
+              <p className="text-sm text-destructive">{errors.{{ field.name }}[0]}</p>
+            )}
+          </div>
+
+{% elif field.type == 'date' %}
+          {/* {{ field.label }} */}
+          <div className="space-y-2">
+            <Label htmlFor="{{ field.name }}">{{ field.label }}{% if field.required == false %} <span className="text-muted-foreground">(optional)</span>{% endif %}</Label>
+            <Input
+              id="{{ field.name }}"
+              name="{{ field.name }}"
+              type="date"
+{% if isEditForm %}
+              defaultValue={item.{{ field.name }} ? new Date(item.{{ field.name }}).toISOString().split('T')[0] : ""}
+{% elif field.defaultValue %}
+              defaultValue="{{ field.defaultValue }}"
+{% endif %}
+{% if field.required != false %}
+              required
+{% endif %}
+            />
+{% if field.helpText %}
+            <p className="text-sm text-muted-foreground">{{ field.helpText }}</p>
+{% endif %}
+            {errors?.{{ field.name }} && (
+              <p className="text-sm text-destructive">{errors.{{ field.name }}[0]}</p>
+            )}
+          </div>
+
+{% elif field.type == 'textarea' %}
+          {/* {{ field.label }} */}
+          <div className="space-y-2">
+            <Label htmlFor="{{ field.name }}">{{ field.label }}{% if field.required == false %} <span className="text-muted-foreground">(optional)</span>{% endif %}</Label>
+            <textarea
+              id="{{ field.name }}"
+              name="{{ field.name }}"
+              className="flex min-h-[120px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+{% if field.placeholder %}
+              placeholder="{{ field.placeholder }}"
+{% endif %}
+{% if isEditForm %}
+              defaultValue={item.{{ field.name }} ?? ""}
+{% elif field.defaultValue %}
+              defaultValue="{{ field.defaultValue }}"
+{% endif %}
+{% if field.required != false %}
+              required
+{% endif %}
+{% if field.maxLength %}
+              maxLength={{ "{" }}{{ field.maxLength }}{{ "}" }}
+{% endif %}
+            />
+{% if field.helpText %}
+            <p className="text-sm text-muted-foreground">{{ field.helpText }}</p>
+{% endif %}
+            {errors?.{{ field.name }} && (
+              <p className="text-sm text-destructive">{errors.{{ field.name }}[0]}</p>
+            )}
+          </div>
+
+{% elif field.type == 'checkbox' %}
+          {/* {{ field.label }} */}
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="{{ field.name }}"
+              name="{{ field.name }}"
+{% if isEditForm %}
+              defaultChecked={item.{{ field.name }} === true}
+{% elif field.defaultValue %}
+              defaultChecked={{ "{" }}{{ field.defaultValue }}{{ "}" }}
+{% endif %}
+            />
+            <Label htmlFor="{{ field.name }}" className="font-normal cursor-pointer">
+              {{ field.label }}
+            </Label>
+          </div>
+{% if field.helpText %}
+          <p className="text-sm text-muted-foreground ml-6">{{ field.helpText }}</p>
+{% endif %}
+          {errors?.{{ field.name }} && (
+            <p className="text-sm text-destructive">{errors.{{ field.name }}[0]}</p>
+          )}
+
+{% elif field.type == 'checkboxes' %}
+          {/* {{ field.label }} */}
+          <div className="space-y-2">
+            <Label>{{ field.label }}{% if field.required == false %} <span className="text-muted-foreground">(optional)</span>{% endif %}</Label>
+            <div className="flex flex-wrap gap-4">
+{% for opt in field.options %}
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="{{ field.name }}-{{ opt.value }}"
+                  name="{{ field.name }}"
+                  value="{{ opt.value }}"
+{% if isEditForm %}
+                  defaultChecked={Array.isArray(item.{{ field.name }}) && item.{{ field.name }}.includes("{{ opt.value }}")}
+{% endif %}
+                />
+                <Label htmlFor="{{ field.name }}-{{ opt.value }}" className="font-normal cursor-pointer">
+                  {{ opt.label }}
+                </Label>
+              </div>
+{% endfor %}
+            </div>
+{% if field.helpText %}
+            <p className="text-sm text-muted-foreground">{{ field.helpText }}</p>
+{% endif %}
+            {errors?.{{ field.name }} && (
+              <p className="text-sm text-destructive">{errors.{{ field.name }}[0]}</p>
+            )}
+          </div>
+
+{% elif field.type == 'select' %}
+          {/* {{ field.label }} */}
+          <div className="space-y-2">
+            <Label htmlFor="{{ field.name }}">{{ field.label }}{% if field.required == false %} <span className="text-muted-foreground">(optional)</span>{% endif %}</Label>
+            <select
+              id="{{ field.name }}"
+              name="{{ field.name }}"
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+{% if isEditForm %}
+              defaultValue={item.{{ field.name }} ?? ""}
+{% elif field.defaultValue %}
+              defaultValue="{{ field.defaultValue }}"
+{% endif %}
+{% if field.required != false %}
+              required
+{% endif %}
+            >
+{% if field.required == false %}
+              <option value="">Select...</option>
+{% endif %}
+{% for opt in field.options %}
+              <option value="{{ opt.value }}">{{ opt.label }}</option>
+{% endfor %}
+            </select>
+{% if field.helpText %}
+            <p className="text-sm text-muted-foreground">{{ field.helpText }}</p>
+{% endif %}
+            {errors?.{{ field.name }} && (
+              <p className="text-sm text-destructive">{errors.{{ field.name }}[0]}</p>
+            )}
+          </div>
+
+{% endif %}
+{% endfor %}
+          {/* Actions */}
+          <div className="flex gap-3 pt-4">
+            <Button type="submit">{% if isEditForm %}Save Changes{% else %}Create{% endif %}</Button>
+            <Button type="button" variant="outline" asChild>
+              <Link to="{{ cancelUrl }}">Cancel</Link>
+            </Button>
+          </div>
+        </Form>
+      </div>
+    </div>
+  );
+}

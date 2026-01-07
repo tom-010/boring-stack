@@ -5,34 +5,33 @@
  * Designed for LLM usage - takes structured JSON config and produces route files.
  *
  * Usage:
- *   npx tsx scripts/generate-from-template.ts <template> <config.json> <output>
+ *   npx tsx scripts/generate-from-template.ts <template> <config.json> [output]
  *
  * Arguments:
- *   template    - Path to .njk template file (e.g., templates/list-page.tsx.njk)
+ *   template    - Path to .njk template file (e.g., templates/table-list-view.njk)
  *   config.json - Path to JSON config file with template variables
- *   output      - Target path for generated file (e.g., app/routes/my-todos2.tsx)
+ *   output      - Target path for generated file, or "-" for stdout
+ *                 If omitted, prints to stdout (same as "-")
  *
- * Example:
+ * Examples:
+ *   # Write to file
  *   npx tsx scripts/generate-from-template.ts \
- *     templates/list-page.tsx.njk \
+ *     templates/table-list-view.njk \
  *     templates/configs/my-todos2.json \
  *     app/routes/my-todos2.tsx
  *
- * Template Variables (for list-page.tsx.njk):
- *   {
- *     "filename": "my-todos2",           // Route filename without extension
- *     "entityName": "Todo",              // Singular, PascalCase
- *     "entityNamePlural": "Todos",       // Plural, PascalCase
- *     "entityLabel": "todo",             // Singular, lowercase
- *     "entityLabelPlural": "todos",      // Plural, lowercase
- *     "basePath": "/my-todos2",          // URL base path
- *     "prismaModel": "todo",             // Prisma model name
- *     "icon": "ListChecks",              // Lucide icon name
- *     "sortFields": [...],               // Sortable column definitions
- *     "columns": [...],                  // Table column definitions
- *     "searchFields": ["title"],         // Fields to search
- *     "ownerField": "userId"             // Field for ownership (or null)
- *   }
+ *   # Print to stdout (for copy-paste)
+ *   npx tsx scripts/generate-from-template.ts \
+ *     templates/table-only.njk \
+ *     templates/configs/user-table.json
+ *
+ *   # Explicit stdout
+ *   npx tsx scripts/generate-from-template.ts \
+ *     templates/table-only.njk \
+ *     templates/configs/user-table.json \
+ *     -
+ *
+ * See templates/README.md for available templates and config schemas.
  */
 
 import * as fs from "fs";
@@ -42,18 +41,30 @@ import nunjucks from "nunjucks";
 function main() {
   const args = process.argv.slice(2);
 
-  if (args.length !== 3) {
-    console.error("Usage: npx tsx scripts/generate-from-template.ts <template> <config.json> <output>");
+  if (args.length < 2 || args.length > 3) {
+    console.error("Usage: npx tsx scripts/generate-from-template.ts <template> <config.json> [output]");
     console.error("");
-    console.error("Example:");
+    console.error("Arguments:");
+    console.error("  template    - Path to .njk template file");
+    console.error("  config.json - Path to JSON config file");
+    console.error("  output      - Target path, or \"-\" / omit for stdout");
+    console.error("");
+    console.error("Examples:");
+    console.error("  # Write to file");
     console.error("  npx tsx scripts/generate-from-template.ts \\");
-    console.error("    templates/list-page.tsx.njk \\");
+    console.error("    templates/table-list-view.njk \\");
     console.error("    templates/configs/my-todos2.json \\");
     console.error("    app/routes/my-todos2.tsx");
+    console.error("");
+    console.error("  # Print to stdout (for copy-paste)");
+    console.error("  npx tsx scripts/generate-from-template.ts \\");
+    console.error("    templates/table-only.njk \\");
+    console.error("    templates/configs/user-table.json");
     process.exit(1);
   }
 
   const [templatePath, configPath, outputPath] = args;
+  const writeToStdout = !outputPath || outputPath === "-";
 
   // Validate template exists
   if (!fs.existsSync(templatePath)) {
@@ -126,35 +137,40 @@ function main() {
     process.exit(1);
   }
 
-  // Ensure output directory exists
-  const outputDir = path.dirname(outputPath);
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
+  // Output: stdout or file
+  if (writeToStdout) {
+    // Print directly to stdout (no extra messages)
+    console.log(output);
+  } else {
+    // Write to file
+    const outputDir = path.dirname(outputPath);
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+
+    fs.writeFileSync(outputPath, output);
+
+    console.log(`Generated: ${outputPath}`);
+    console.log("");
+    console.log("=".repeat(70));
+    console.log("IMPORTANT: This is a NON-FUNCTIONAL starting point.");
+    console.log("=".repeat(70));
+    console.log("");
+    console.log("The generated code is intentionally minimal and incomplete.");
+    console.log("It exists only to provide a consistent UI skeleton.");
+    console.log("");
+    console.log("You are expected to:");
+    console.log("  - Think about how the UI should actually look");
+    console.log("  - Remove non-sensical or irrelevant parts");
+    console.log("  - Add your own logic, fields, and features");
+    console.log("  - Change everything as needed");
+    console.log("");
+    console.log("This is a canvas, not a finished product.");
+    console.log("The time saved here should go into ACTUAL features.");
+    console.log("");
+    console.log("See templates/README.md for more details.");
+    console.log("=".repeat(70));
   }
-
-  // Write output
-  fs.writeFileSync(outputPath, output);
-
-  console.log(`Generated: ${outputPath}`);
-  console.log("");
-  console.log("=".repeat(70));
-  console.log("IMPORTANT: This is a NON-FUNCTIONAL starting point.");
-  console.log("=".repeat(70));
-  console.log("");
-  console.log("The generated code is intentionally minimal and incomplete.");
-  console.log("It exists only to provide a consistent UI skeleton.");
-  console.log("");
-  console.log("You are expected to:");
-  console.log("  - Think about how the UI should actually look");
-  console.log("  - Remove non-sensical or irrelevant parts");
-  console.log("  - Add your own logic, fields, and features");
-  console.log("  - Change everything as needed");
-  console.log("");
-  console.log("This is a canvas, not a finished product.");
-  console.log("The time saved here should go into ACTUAL features.");
-  console.log("");
-  console.log("See templates/README.md for more details.");
-  console.log("=".repeat(70));
 }
 
 main();

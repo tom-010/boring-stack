@@ -1,0 +1,194 @@
+{#
+  Template: Table Only (Component)
+
+  A standalone table component for embedding in existing pages.
+  No loader/action - this is a pure React component that receives data via props.
+  Designed to print to stdout for easy copy-paste into existing files.
+
+  Required fields:
+    - componentName: PascalCase name (e.g., "UserTable", "ProjectList")
+    - entityLabel: Singular, lowercase (e.g., "user", "project")
+    - entityLabelPlural: Plural, lowercase (e.g., "users", "projects")
+    - columns: Array of column configs
+        - field: Field name in data object (e.g., "name", "email")
+        - label: Header label (e.g., "Name", "Email")
+        - type: "string" | "date" | "number" | "link" (optional, defaults to string)
+        - hiddenOnMobile: boolean (optional)
+        - linkTo: URL pattern with {id} placeholder (only for type: "link")
+
+  Optional fields:
+    - showRowNumbers: boolean, default true - show row numbers column
+    - showActions: boolean, default false - show edit/delete actions column
+    - actionsBasePath: URL base for action links (required if showActions is true)
+    - emptyIcon: Lucide icon for empty state (e.g., "Users")
+
+  Example usage:
+    {
+      "componentName": "UserTable",
+      "entityLabel": "user",
+      "entityLabelPlural": "users",
+      "columns": [
+        { "field": "name", "label": "Name", "type": "link", "linkTo": "/users/{id}" },
+        { "field": "email", "label": "Email" },
+        { "field": "createdAt", "label": "Created", "type": "date", "hiddenOnMobile": true }
+      ],
+      "showRowNumbers": true,
+      "showActions": true,
+      "actionsBasePath": "/users",
+      "emptyIcon": "Users"
+    }
+#}
+// ============================================================
+// {{ componentName }} - Table Component
+// Copy this into your route file or component
+// ============================================================
+
+import { Link } from "react-router";
+{% if showActions %}
+import { Pencil, Trash2, MoreHorizontal } from "lucide-react";
+{% endif %}
+{% if emptyIcon %}
+import { {{ emptyIcon }} } from "lucide-react";
+{% endif %}
+{% if showActions %}
+import { Button } from "~/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
+import { ConfirmDialog } from "~/components/confirm-dialog";
+{% endif %}
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
+
+// Define the shape of your data items
+interface {{ componentName }}Item {
+  id: string;
+{% for col in columns %}
+{% if col.type == 'date' %}
+  {{ col.field }}: Date | string;
+{% elif col.type == 'number' %}
+  {{ col.field }}: number;
+{% else %}
+  {{ col.field }}: string;
+{% endif %}
+{% endfor %}
+}
+
+interface {{ componentName }}Props {
+  items: {{ componentName }}Item[];
+  startIndex?: number; // For pagination row numbers (default: 0)
+{% if showActions %}
+  onDelete?: (id: string, name: string) => void;
+{% endif %}
+}
+
+export function {{ componentName }}({ items, startIndex = 0{% if showActions %}, onDelete{% endif %} }: {{ componentName }}Props) {
+  if (items.length === 0) {
+    return (
+      <div className="text-center text-muted-foreground py-12">
+{% if emptyIcon %}
+        <{{ emptyIcon }} className="h-12 w-12 mx-auto mb-4 opacity-50" />
+{% endif %}
+        <p className="text-lg">No {{ entityLabelPlural }} found.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+{% if showRowNumbers != false %}
+            <TableHead className="w-12">#</TableHead>
+{% endif %}
+{% for col in columns %}
+            <TableHead{% if col.hiddenOnMobile %} className="hidden md:table-cell"{% endif %}>{{ col.label }}</TableHead>
+{% endfor %}
+{% if showActions %}
+            <TableHead className="w-20"></TableHead>
+{% endif %}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {items.map((item, idx) => (
+            <TableRow key={item.id}>
+{% if showRowNumbers != false %}
+              <TableCell className="font-medium text-muted-foreground">
+                {startIndex + idx + 1}
+              </TableCell>
+{% endif %}
+{% for col in columns %}
+{% if col.type == 'link' %}
+              <TableCell{% if col.hiddenOnMobile %} className="hidden md:table-cell"{% endif %}>
+                <Link
+                  to={`{{ col.linkTo | replace('{id}', '${item.id}') }}`}
+                  className="hover:underline font-medium"
+                >
+                  {item.{{ col.field }}}
+                </Link>
+              </TableCell>
+{% elif col.type == 'date' %}
+              <TableCell className="{% if col.hiddenOnMobile %}hidden md:table-cell {% endif %}text-sm text-muted-foreground">
+                {new Date(item.{{ col.field }}).toLocaleDateString()}
+              </TableCell>
+{% elif col.type == 'number' %}
+              <TableCell className="{% if col.hiddenOnMobile %}hidden md:table-cell {% endif %}text-sm tabular-nums">
+                {item.{{ col.field }}}
+              </TableCell>
+{% else %}
+              <TableCell className="{% if col.hiddenOnMobile %}hidden md:table-cell {% endif %}text-sm">
+                {item.{{ col.field }} ?? "-"}
+              </TableCell>
+{% endif %}
+{% endfor %}
+{% if showActions %}
+              <TableCell className="text-right">
+                <div className="flex items-center justify-end gap-1">
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link to={`{{ actionsBasePath }}/${item.id}`}>
+                      <Pencil className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                  {onDelete && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <ConfirmDialog
+                          title={`Delete "${item.{{ columns[0].field }}}"?`}
+                          description="This action cannot be undone."
+                          confirmLabel="Delete"
+                          variant="destructive"
+                          onConfirm={() => onDelete(item.id, item.{{ columns[0].field }})}
+                        >
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </ConfirmDialog>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+              </TableCell>
+{% endif %}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}

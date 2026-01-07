@@ -1,0 +1,528 @@
+{#
+  Template: Detail Page with Related Items Table (One-to-Many)
+
+  A detail page for a parent entity with a table of related child items.
+  Includes: parent details, inline edit, delete, add child form, children table.
+
+  Example: Project -> Todos, User -> Posts, Category -> Products
+
+  Required fields:
+    - filename: Route filename without extension (e.g., "project-detail")
+    - parentEntity:
+        - name: Singular PascalCase (e.g., "Project")
+        - label: Singular lowercase (e.g., "project")
+        - prismaModel: Prisma model name (e.g., "project")
+        - basePath: URL base path (e.g., "/projects")
+        - listPath: URL to return to after delete (e.g., "/")
+        - displayField: Primary display field (e.g., "name")
+        - descriptionField: Optional secondary field (e.g., "description")
+        - editFields: Array of editable fields (form-all-inputs style)
+    - childEntity:
+        - name: Singular PascalCase (e.g., "Todo")
+        - namePlural: Plural PascalCase (e.g., "Todos")
+        - label: Singular lowercase (e.g., "todo")
+        - labelPlural: Plural lowercase (e.g., "todos")
+        - prismaModel: Prisma model name (e.g., "todo")
+        - foreignKey: FK field in child (e.g., "projectId")
+        - detailPath: URL pattern for child detail (e.g., "/todos/{id}")
+        - columns: Array of table column configs
+        - createFields: Array of fields for quick-add form
+        - defaultValues: Object of default values for create (optional)
+
+  Optional fields:
+    - ownerField: Field for ownership in child (e.g., "userId")
+    - icon: Lucide icon name (e.g., "FolderKanban")
+    - childIcon: Lucide icon for empty state (e.g., "CheckSquare")
+
+  Example usage:
+    {
+      "filename": "project-detail",
+      "parentEntity": {
+        "name": "Project",
+        "label": "project",
+        "prismaModel": "project",
+        "basePath": "/projects",
+        "listPath": "/",
+        "displayField": "name",
+        "descriptionField": "description",
+        "editFields": [
+          { "name": "name", "label": "Name", "type": "text", "required": true },
+          { "name": "description", "label": "Description", "type": "textarea", "required": false }
+        ]
+      },
+      "childEntity": {
+        "name": "Todo",
+        "namePlural": "Todos",
+        "label": "todo",
+        "labelPlural": "todos",
+        "prismaModel": "todo",
+        "foreignKey": "projectId",
+        "detailPath": "/todos/{id}",
+        "columns": [
+          { "field": "title", "label": "Title", "link": true },
+          { "field": "priority", "label": "Priority" },
+          { "field": "completed", "label": "Done", "type": "boolean" }
+        ],
+        "createFields": [
+          { "name": "title", "label": "Title", "type": "text", "required": true, "placeholder": "Add a new todo..." }
+        ],
+        "defaultValues": { "priority": "medium" }
+      },
+      "ownerField": "userId",
+      "icon": "FolderKanban",
+      "childIcon": "CheckSquare"
+    }
+#}
+/*+++
+intent = "{{ parentEntity.name }} detail page with {{ childEntity.labelPlural }} management"
++++*/
+import { useEffect, useRef, useState } from "react";
+import type { Route } from "./+types/{{ filename }}";
+import type { RouteHandle, BreadcrumbItem } from "~/components/page-header";
+import { Form, Link, redirect, useFetcher } from "react-router";
+import { z } from "zod";
+import { Plus, Pencil, Trash2, MoreHorizontal{% if icon %}, {{ icon }}{% endif %}{% if childIcon %}, {{ childIcon }}{% endif %} } from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
+import { ConfirmDialog } from "~/components/confirm-dialog";
+import { db } from "~/db/client";
+import { auth } from "~/lib/auth.server";
+import { getIntent, parseFormDataOrThrow } from "~/lib/forms";
+import { log } from "~/lib/logger.server";
+
+export const handle: RouteHandle = {
+  breadcrumb: (data): BreadcrumbItem[] => {
+    const { parent } = data as { parent: { {{ parentEntity.displayField }}: string } };
+    return [
+      { label: "{{ parentEntity.name }}s", href: "{{ parentEntity.listPath }}" },
+      { label: parent.{{ parentEntity.displayField }} },
+    ];
+  },
+};
+
+// =============================================================================
+// Schemas
+// =============================================================================
+
+const update{{ parentEntity.name }}Schema = z.object({
+{% for field in parentEntity.editFields %}
+{% if field.type == 'email' %}
+  {{ field.name }}: z.string(){% if field.required != false %}.email("Invalid email"){% else %}.optional(){% endif %},
+{% elif field.type == 'number' %}
+  {{ field.name }}: z.coerce.number(){% if field.min is defined %}.min({{ field.min }}){% endif %}{% if field.max is defined %}.max({{ field.max }}){% endif %}{% if field.required == false %}.optional(){% endif %},
+{% elif field.type == 'textarea' %}
+  {{ field.name }}: z.string(){% if field.maxLength is defined %}.max({{ field.maxLength }}){% endif %}{% if field.required == false %}.optional(){% endif %},
+{% else %}
+  {{ field.name }}: z.string(){% if field.required != false %}.min(1, "Required"){% endif %}{% if field.maxLength is defined %}.max({{ field.maxLength }}){% endif %}{% if field.required == false %}.optional(){% endif %},
+{% endif %}
+{% endfor %}
+});
+
+const create{{ childEntity.name }}Schema = z.object({
+{% for field in childEntity.createFields %}
+{% if field.type == 'email' %}
+  {{ field.name }}: z.string(){% if field.required != false %}.email("Invalid email"){% else %}.optional(){% endif %},
+{% elif field.type == 'number' %}
+  {{ field.name }}: z.coerce.number(){% if field.min is defined %}.min({{ field.min }}){% endif %}{% if field.max is defined %}.max({{ field.max }}){% endif %}{% if field.required == false %}.optional(){% endif %},
+{% elif field.type == 'select' %}
+  {{ field.name }}: z.enum([{% for opt in field.options %}"{{ opt.value }}"{% if not loop.last %}, {% endif %}{% endfor %}]){% if field.required == false %}.optional(){% endif %},
+{% else %}
+  {{ field.name }}: z.string(){% if field.required != false %}.min(1, "Required"){% endif %}{% if field.maxLength is defined %}.max({{ field.maxLength }}){% endif %}{% if field.required == false %}.optional(){% endif %},
+{% endif %}
+{% endfor %}
+});
+
+const delete{{ childEntity.name }}Schema = z.object({
+  id: z.string(),
+});
+
+// =============================================================================
+// Loader
+// =============================================================================
+
+export async function loader({ params, request }: Route.LoaderArgs) {
+  const session = await auth.api.getSession({ headers: request.headers });
+  const userId = session!.user.id;
+
+  const parentId = params.id;
+  if (!parentId) {
+    throw new Response("Not Found", { status: 404 });
+  }
+
+  const parent = await db.{{ parentEntity.prismaModel }}.findUnique({
+    where: { id: parentId },
+  });
+
+  if (!parent) {
+    throw new Response("Not Found", { status: 404 });
+  }
+
+  const children = await db.{{ childEntity.prismaModel }}.findMany({
+    where: {
+      {{ childEntity.foreignKey }}: parentId,
+{% if ownerField %}
+      {{ ownerField }}: userId,
+{% endif %}
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return { parent, children, currentUserId: userId };
+}
+
+// =============================================================================
+// Action
+// =============================================================================
+
+export async function action({ request, params }: Route.ActionArgs) {
+  const session = await auth.api.getSession({ headers: request.headers });
+  const userId = session!.user.id;
+
+  const formData = await request.formData();
+  const intent = getIntent(formData);
+  const parentId = params.id!;
+
+  switch (intent) {
+    case "update{{ parentEntity.name }}": {
+      const data = parseFormDataOrThrow(formData, update{{ parentEntity.name }}Schema);
+      await db.{{ parentEntity.prismaModel }}.update({
+        where: { id: parentId },
+        data,
+      });
+      log.info({ {{ parentEntity.label }}Id: parentId, byUserId: userId }, "{{ parentEntity.label }}_updated");
+      return redirect(`{{ parentEntity.basePath }}/${parentId}`);
+    }
+
+    case "delete{{ parentEntity.name }}": {
+      await db.{{ parentEntity.prismaModel }}.delete({ where: { id: parentId } });
+      log.info({ {{ parentEntity.label }}Id: parentId, byUserId: userId }, "{{ parentEntity.label }}_deleted");
+      return redirect("{{ parentEntity.listPath }}");
+    }
+
+    case "create{{ childEntity.name }}": {
+      const data = parseFormDataOrThrow(formData, create{{ childEntity.name }}Schema);
+      await db.{{ childEntity.prismaModel }}.create({
+        data: {
+          {{ childEntity.foreignKey }}: parentId,
+{% if ownerField %}
+          {{ ownerField }}: userId,
+{% endif %}
+          ...data,
+{% if childEntity.defaultValues %}
+{% for key, value in childEntity.defaultValues %}
+          {{ key }}: "{{ value }}",
+{% endfor %}
+{% endif %}
+        },
+      });
+      log.info({ {{ parentEntity.label }}Id: parentId, byUserId: userId }, "{{ childEntity.label }}_created");
+      return redirect(`{{ parentEntity.basePath }}/${parentId}`);
+    }
+
+    case "delete{{ childEntity.name }}": {
+      const { id } = parseFormDataOrThrow(formData, delete{{ childEntity.name }}Schema);
+      await db.{{ childEntity.prismaModel }}.delete({
+        where: {
+          id,
+{% if ownerField %}
+          {{ ownerField }}: userId,
+{% endif %}
+        },
+      });
+      log.info({ {{ childEntity.label }}Id: id, byUserId: userId }, "{{ childEntity.label }}_deleted");
+      return redirect(`{{ parentEntity.basePath }}/${parentId}`);
+    }
+
+    default:
+      throw new Response("Invalid intent", { status: 400 });
+  }
+}
+
+// =============================================================================
+// Meta
+// =============================================================================
+
+export function meta({ data }: Route.MetaArgs) {
+  const title = data?.parent?.{{ parentEntity.displayField }} ?? "{{ parentEntity.name }}";
+  return [
+    { title },
+    { name: "description", content: "View and manage {{ parentEntity.label }} {{ childEntity.labelPlural }}" },
+  ];
+}
+
+// =============================================================================
+// Components
+// =============================================================================
+
+function Delete{{ childEntity.name }}Button({ itemId, itemName }: { itemId: string; itemName: string }) {
+  const fetcher = useFetcher();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <ConfirmDialog
+          title={`Delete "${itemName}"?`}
+          description="This action cannot be undone."
+          confirmLabel="Delete"
+          variant="destructive"
+          onConfirm={() => {
+            fetcher.submit(
+              { intent: "delete{{ childEntity.name }}", id: itemId },
+              { method: "post" }
+            );
+          }}
+        >
+          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete
+          </DropdownMenuItem>
+        </ConfirmDialog>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// =============================================================================
+// Page Component
+// =============================================================================
+
+export default function {{ parentEntity.name }}DetailPage({ loaderData }: Route.ComponentProps) {
+  const { parent, children } = loaderData;
+  const [editing, setEditing] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, [children.length]);
+
+  return (
+    <div className="p-6 md:p-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Parent Header - Edit Mode */}
+        {editing ? (
+          <Form
+            method="post"
+            className="mb-8"
+            onSubmit={() => setEditing(false)}
+          >
+            <input type="hidden" name="intent" value="update{{ parentEntity.name }}" />
+            <div className="space-y-3">
+{% for field in parentEntity.editFields %}
+{% if loop.first %}
+              <input
+                type="text"
+                name="{{ field.name }}"
+                defaultValue={parent.{{ field.name }} || ""}
+                className="w-full px-3 py-2 text-2xl font-bold border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+{% if field.required != false %}
+                required
+{% endif %}
+                autoFocus
+{% if field.placeholder %}
+                placeholder="{{ field.placeholder }}"
+{% endif %}
+              />
+{% else %}
+{% if field.type == 'textarea' %}
+              <textarea
+                name="{{ field.name }}"
+                defaultValue={parent.{{ field.name }} || ""}
+                placeholder="{{ field.placeholder | default(field.label + ' (optional)') }}"
+                className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring min-h-[80px]"
+              />
+{% else %}
+              <input
+                type="{{ field.type | default('text') }}"
+                name="{{ field.name }}"
+                defaultValue={parent.{{ field.name }} || ""}
+                placeholder="{{ field.placeholder | default(field.label + ' (optional)') }}"
+                className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+{% endif %}
+{% endif %}
+{% endfor %}
+              <div className="flex gap-2">
+                <Button type="submit" size="sm">Save</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setEditing(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </Form>
+        ) : (
+          /* Parent Header - View Mode */
+          <div className="mb-8 group">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+{% if icon %}
+                <{{ icon }} className="h-8 w-8 text-muted-foreground" />
+{% endif %}
+                <h1 className="text-3xl font-bold">{parent.{{ parentEntity.displayField }}}</h1>
+                <button
+                  onClick={() => setEditing(true)}
+                  className="opacity-0 group-hover:opacity-100 p-1 hover:bg-muted rounded"
+                >
+                  <Pencil className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </div>
+              <ConfirmDialog
+                title="Delete {{ parentEntity.name }}?"
+                description="This will permanently delete this {{ parentEntity.label }} and all its {{ childEntity.labelPlural }}."
+                confirmLabel="Delete"
+                variant="destructive"
+                onConfirm={() => {
+                  const form = document.createElement("form");
+                  form.method = "post";
+                  const input = document.createElement("input");
+                  input.type = "hidden";
+                  input.name = "intent";
+                  input.value = "delete{{ parentEntity.name }}";
+                  form.appendChild(input);
+                  document.body.appendChild(form);
+                  form.submit();
+                }}
+              >
+                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </ConfirmDialog>
+            </div>
+{% if parentEntity.descriptionField %}
+            {parent.{{ parentEntity.descriptionField }} && (
+              <p className="text-muted-foreground mt-2">{parent.{{ parentEntity.descriptionField }}}</p>
+            )}
+{% endif %}
+          </div>
+        )}
+
+        {/* Add Child Form */}
+        <Form method="post" className="mb-8">
+          <input type="hidden" name="intent" value="create{{ childEntity.name }}" />
+          <div className="flex gap-2">
+{% for field in childEntity.createFields %}
+{% if loop.first %}
+            <input
+              ref={inputRef}
+              key={children.length}
+              type="text"
+              name="{{ field.name }}"
+              placeholder="{{ field.placeholder | default('Add a new ' + childEntity.label + '...') }}"
+              className="flex-1 px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+{% if field.required != false %}
+              required
+{% endif %}
+            />
+{% elif field.type == 'select' %}
+            <select
+              name="{{ field.name }}"
+              className="px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+{% for opt in field.options %}
+              <option value="{{ opt.value }}">{{ opt.label }}</option>
+{% endfor %}
+            </select>
+{% else %}
+            <input type="hidden" name="{{ field.name }}" value="{{ field.defaultValue | default('') }}" />
+{% endif %}
+{% endfor %}
+            <Button type="submit">
+              <Plus className="h-4 w-4 mr-2" />
+              Add {{ childEntity.name }}
+            </Button>
+          </div>
+        </Form>
+
+        {/* Children Table */}
+        {children.length === 0 ? (
+          <div className="text-center text-muted-foreground py-12">
+{% if childIcon %}
+            <{{ childIcon }} className="h-12 w-12 mx-auto mb-4 opacity-50" />
+{% endif %}
+            <p className="text-lg">No {{ childEntity.labelPlural }} yet. Create one to get started!</p>
+          </div>
+        ) : (
+          <div className="rounded-lg border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">#</TableHead>
+{% for col in childEntity.columns %}
+                  <TableHead{% if col.hiddenOnMobile %} className="hidden md:table-cell"{% endif %}>{{ col.label }}</TableHead>
+{% endfor %}
+                  <TableHead className="w-20"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {children.map((item, idx) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium text-muted-foreground">
+                      {idx + 1}
+                    </TableCell>
+{% for col in childEntity.columns %}
+{% if col.link %}
+                    <TableCell{% if col.hiddenOnMobile %} className="hidden md:table-cell"{% endif %}>
+                      <Link
+                        to={`{{ childEntity.detailPath | replace('{id}', '${item.id}') }}`}
+                        className="hover:underline font-medium"
+                      >
+                        {item.{{ col.field }}}
+                      </Link>
+                    </TableCell>
+{% elif col.type == 'date' %}
+                    <TableCell className="{% if col.hiddenOnMobile %}hidden md:table-cell {% endif %}text-sm text-muted-foreground">
+                      {new Date(item.{{ col.field }}).toLocaleDateString()}
+                    </TableCell>
+{% elif col.type == 'boolean' %}
+                    <TableCell className="{% if col.hiddenOnMobile %}hidden md:table-cell {% endif %}text-sm">
+                      {item.{{ col.field }} ? "✓" : "-"}
+                    </TableCell>
+{% else %}
+                    <TableCell className="{% if col.hiddenOnMobile %}hidden md:table-cell {% endif %}text-sm text-muted-foreground">
+                      {item.{{ col.field }} ?? "-"}
+                    </TableCell>
+{% endif %}
+{% endfor %}
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link to={`{{ childEntity.detailPath | replace('{id}', '${item.id}') }}`}>
+                            <Pencil className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <Delete{{ childEntity.name }}Button itemId={item.id} itemName={item.{{ childEntity.columns[0].field }}} />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+
+        {/* Stats */}
+        <div className="mt-8 pt-6 border-t text-sm text-muted-foreground">
+          <p>{children.length} {{ childEntity.labelPlural }}</p>
+        </div>
+      </div>
+    </div>
+  );
+}

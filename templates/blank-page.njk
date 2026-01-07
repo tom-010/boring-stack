@@ -1,0 +1,105 @@
+{#
+  Template: Blank Page
+
+  A minimal starting point with just the route skeleton.
+  Use when you need a page that doesn't fit other templates.
+
+  Required fields:
+    - filename: Route filename without extension (e.g., "settings")
+    - pageTitle: Page title for <title> and h1 (e.g., "Settings")
+    - pageDescription: Brief description for meta and subtitle (e.g., "Manage your account settings")
+    - breadcrumbLabel: Label for breadcrumb (e.g., "Settings")
+    - breadcrumbHref: URL for breadcrumb (e.g., "/settings")
+
+  Optional fields:
+    - requiresAuth: boolean, default true - whether to require authentication
+    - icon: Lucide icon name (e.g., "Settings") - only needed if you want an icon
+
+  Example usage:
+    {
+      "filename": "settings",
+      "pageTitle": "Settings",
+      "pageDescription": "Manage your account settings",
+      "breadcrumbLabel": "Settings",
+      "breadcrumbHref": "/settings",
+      "requiresAuth": true,
+      "icon": "Settings"
+    }
+#}
+/*+++
+intent = "{{ pageDescription }}"
++++*/
+import type { Route } from "./+types/{{ filename }}";
+import type { RouteHandle } from "~/components/page-header";
+{% if icon %}
+import { {{ icon }} } from "lucide-react";
+{% endif %}
+{% if requiresAuth != false %}
+import { auth } from "~/lib/auth.server";
+{% endif %}
+
+export const handle: RouteHandle = {
+  breadcrumb: { label: "{{ breadcrumbLabel }}", href: "{{ breadcrumbHref }}" },
+};
+
+export async function loader({ request }: Route.LoaderArgs) {
+{% if requiresAuth != false %}
+  const session = await auth.api.getSession({ headers: request.headers });
+  const userId = session!.user.id;
+
+{% endif %}
+  // TODO: Load data here
+  return {
+{% if requiresAuth != false %}
+    currentUserId: userId,
+{% endif %}
+  };
+}
+
+export async function action({ request }: Route.ActionArgs) {
+{% if requiresAuth != false %}
+  const session = await auth.api.getSession({ headers: request.headers });
+  const userId = session!.user.id;
+
+{% endif %}
+  const formData = await request.formData();
+  const intent = formData.get("intent");
+
+  // TODO: Handle form submissions
+  switch (intent) {
+    default:
+      throw new Error(`Unknown intent: ${intent}`);
+  }
+}
+
+export function meta() {
+  return [
+    { title: "{{ pageTitle }}" },
+    { name: "description", content: "{{ pageDescription }}" },
+  ];
+}
+
+export default function {{ filename | replace("-", "") | capitalize }}Page({ loaderData }: Route.ComponentProps) {
+  return (
+    <div className="p-6 md:p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+{% if icon %}
+          <div className="flex items-center gap-3 mb-2">
+            <{{ icon }} className="h-8 w-8" />
+            <h1 className="text-3xl font-bold">{{ pageTitle }}</h1>
+          </div>
+{% else %}
+          <h1 className="text-3xl font-bold mb-2">{{ pageTitle }}</h1>
+{% endif %}
+          <p className="text-muted-foreground">{{ pageDescription }}</p>
+        </div>
+
+        {/* TODO: Add your content here */}
+        <div className="rounded-lg border p-6">
+          <p className="text-muted-foreground">Content goes here...</p>
+        </div>
+      </div>
+    </div>
+  );
+}
