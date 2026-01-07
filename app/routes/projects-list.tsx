@@ -5,6 +5,7 @@ import type { Route } from "./+types/projects-list";
 import type { RouteHandle } from "~/components/page-header";
 import { Link, redirect, useSearchParams, useFetcher } from "react-router";
 import { Plus, Folder, Pencil, Trash2, MoreHorizontal, ArrowUp, ArrowDown } from "lucide-react";
+import { ExpandableText } from "~/components/expandable-text";
 import { Button } from "~/components/ui/button";
 import {
   Table,
@@ -352,8 +353,8 @@ export default function ProjectsPage({ loaderData }: Route.ComponentProps) {
                             </span>
                           )}
                         </TableCell>
-                        <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                          {project.description || "-"}
+                        <TableCell className="hidden md:table-cell text-sm text-muted-foreground max-w-xs">
+                          <ExpandableText text={project.description} />
                         </TableCell>
                         <TableCell className="text-center text-sm">
                           {project.openCount}

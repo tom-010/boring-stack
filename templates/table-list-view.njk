@@ -20,7 +20,7 @@
         - sortable: boolean
         - link: boolean (makes it a link to detail page)
         - hiddenOnMobile: boolean
-        - type: "string" | "date" | "number"
+        - type: "string" | "date" | "number" | "longText" (longText truncates with click-to-expand)
     - searchFields: Array of field names to search (e.g., ["name", "email"])
     - ownerField: Field name for ownership check (e.g., "ownerId"), or null if no ownership
 
@@ -70,6 +70,7 @@ import {
 import { ConfirmDialog } from "~/components/confirm-dialog";
 import { ListPagination } from "~/components/list-pagination";
 import { SearchBar } from "~/components/search-bar";
+import { ExpandableText } from "~/components/expandable-text";
 import { db } from "~/db/client";
 import { auth } from "~/lib/auth.server";
 import { parseFormDataOrThrow } from "~/lib/forms";
@@ -338,6 +339,10 @@ export default function {{ entityNamePlural }}ListPage({ loaderData }: Route.Com
 {% elif col.type == 'date' %}
                         <TableCell className="{% if col.hiddenOnMobile %}hidden md:table-cell {% endif %}text-sm text-muted-foreground">
                           {new Date(item.{{ col.field }}).toLocaleDateString()}
+                        </TableCell>
+{% elif col.type == 'longText' %}
+                        <TableCell className="{% if col.hiddenOnMobile %}hidden md:table-cell {% endif %}text-sm text-muted-foreground max-w-xs">
+                          <ExpandableText text={item.{{ col.field }}} />
                         </TableCell>
 {% else %}
                         <TableCell className="{% if col.hiddenOnMobile %}hidden md:table-cell {% endif %}text-sm text-muted-foreground">

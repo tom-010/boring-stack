@@ -1,11 +1,13 @@
 import {
   isRouteErrorResponse,
+  Link,
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
   useLocation,
+  useNavigate,
 } from "react-router";
 
 import type { Route } from "./+types/root";
@@ -91,6 +93,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  const navigate = useNavigate();
   let message = "Oops!";
   let details = "An unexpected error occurred.";
   let stack: string | undefined;
@@ -110,6 +113,17 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
     <main className="pt-16 p-4 container mx-auto">
       <h1>{message}</h1>
       <p>{details}</p>
+      <div className="mt-4 flex gap-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="text-blue-600 hover:underline"
+        >
+          Go back
+        </button>
+        <Link to="/" className="text-blue-600 hover:underline">
+          Go to home
+        </Link>
+      </div>
       {stack && (
         <pre className="w-full p-4 overflow-x-auto">
           <code>{stack}</code>

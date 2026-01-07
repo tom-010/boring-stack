@@ -25,7 +25,7 @@
         - prismaModel: Prisma model name (e.g., "todo")
         - foreignKey: FK field in child (e.g., "projectId")
         - detailPath: URL pattern for child detail (e.g., "/todos/{id}")
-        - columns: Array of table column configs
+        - columns: Array of table column configs (type: "date" | "boolean" | "longText")
         - createFields: Array of fields for quick-add form
         - defaultValues: Object of default values for create (optional)
 
@@ -99,6 +99,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { ConfirmDialog } from "~/components/confirm-dialog";
+import { ExpandableText } from "~/components/expandable-text";
 import { db } from "~/db/client";
 import { auth } from "~/lib/auth.server";
 import { getIntent, parseFormDataOrThrow } from "~/lib/forms";
@@ -494,6 +495,10 @@ export default function {{ parentEntity.name }}DetailPage({ loaderData }: Route.
 {% elif col.type == 'boolean' %}
                     <TableCell className="{% if col.hiddenOnMobile %}hidden md:table-cell {% endif %}text-sm">
                       {item.{{ col.field }} ? "✓" : "-"}
+                    </TableCell>
+{% elif col.type == 'longText' %}
+                    <TableCell className="{% if col.hiddenOnMobile %}hidden md:table-cell {% endif %}text-sm text-muted-foreground max-w-xs">
+                      <ExpandableText text={item.{{ col.field }}} />
                     </TableCell>
 {% else %}
                     <TableCell className="{% if col.hiddenOnMobile %}hidden md:table-cell {% endif %}text-sm text-muted-foreground">

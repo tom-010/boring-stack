@@ -12,7 +12,7 @@
     - columns: Array of column configs
         - field: Field name in data object (e.g., "name", "email")
         - label: Header label (e.g., "Name", "Email")
-        - type: "string" | "date" | "number" | "link" (optional, defaults to string)
+        - type: "string" | "date" | "number" | "link" | "longText" (optional, defaults to string)
         - hiddenOnMobile: boolean (optional)
         - linkTo: URL pattern with {id} placeholder (only for type: "link")
 
@@ -68,6 +68,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
+import { ExpandableText } from "~/components/expandable-text";
 
 // Define the shape of your data items
 interface {{ componentName }}Item {
@@ -144,6 +145,10 @@ export function {{ componentName }}({ items, startIndex = 0{% if showActions %},
 {% elif col.type == 'number' %}
               <TableCell className="{% if col.hiddenOnMobile %}hidden md:table-cell {% endif %}text-sm tabular-nums">
                 {item.{{ col.field }}}
+              </TableCell>
+{% elif col.type == 'longText' %}
+              <TableCell className="{% if col.hiddenOnMobile %}hidden md:table-cell {% endif %}text-sm max-w-xs">
+                <ExpandableText text={item.{{ col.field }}} />
               </TableCell>
 {% else %}
               <TableCell className="{% if col.hiddenOnMobile %}hidden md:table-cell {% endif %}text-sm">
