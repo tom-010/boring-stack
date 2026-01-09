@@ -7,11 +7,16 @@
 - Traefik running with the `web` network
 - Git access to the repository
 
+###
+
+Setup Traefik
+
 ## Inital setup
 
 - In `docker-compose.prod.yml`  Replace todo.rax0.de with our own domain and everything with todo in the labels. Also replace the `BETTERAUTH_SECRET_KEY` with a own random one
 - Update username and password in `scripts/ssh.sh` and `scripts/deploy.sh`
 - Go on the server and clone your repo in `~/poject-name`
+- Create a root user
 
 
 ## Deploy Steps
