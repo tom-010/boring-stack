@@ -2,6 +2,9 @@
 .env
 /node_modules/
 TODO.md
+openapi.json
+openapi-ts-*
+
 
 # React Router
 /.react-router/

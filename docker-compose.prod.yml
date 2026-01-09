@@ -1,0 +1,81 @@
+services:
+  build:
+    build: .
+    command: sh -c "npm install --include=dev && npm run build"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    profiles: [build]
+
+  migrate:
+    build: .
+    command: sh -c "npm install --include=dev && npx prisma db push"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    environment:
+      DATABASE_URL: postgresql://app:app@postgres:5432/app
+    networks:
+      - app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles: [migrate]
+
+  app:
+    build: .
+    command: ./scripts/prod.sh
+    networks:
+      - web
+      - app
+    environment:
+      DATABASE_URL: postgresql://app:app@postgres:5432/app
+      NODE_ENV: production
+      PORT: 5173
+      BETTER_AUTH_SECRET: "frp8eo3x3m1u7826ylw50y7u2x05gpfj2qcbuxab"
+      BETTER_AUTH_URL: "https://todo.rax0.de"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.todo.rule=Host(`todo.rax0.de`)"
+      - "traefik.http.routers.todo.entrypoints=websecure"
+      - "traefik.http.services.todo.loadbalancer.server.port=5173"
+      - "traefik.http.routers.todo.tls=true"
+      - "traefik.http.routers.todo.tls.certresolver=myresolver"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - uv_cache:/cache/uv
+    expose:
+      - 5173
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    expose:
+      - 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app"]
+      interval: 1s
+      timeout: 1s
+      retries: 10
+
+volumes:
+  postgres_data:
+  node_modules:
+  uv_cache:
+
+networks:
+  web:
+    external: true
+  app:
+    external: false
