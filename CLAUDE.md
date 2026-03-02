@@ -123,7 +123,8 @@ Other little ideas:
     - **Type safety in Python:** All FastAPI endpoint functions in `app/api.py` MUST be fully typed — explicit parameter types and return types. No `Any`, no missing annotations.
     - **Import:** `import { someFunction } from "~/lib/py/client"` (in loaders/actions only)
     - **Details:** See `docs/python-bridge.md`.
-    - **uv is the package manager.** Never use pip. Use `uv add <pkg>` to add deps, `uv sync` to install from lockfile, `uv run <cmd>` to execute. Don't use python directly but only through uv.</pattern>
+    - **uv is the package manager.** Never use pip. Use `uv add <pkg>` to add deps, `uv sync` to install from lockfile, `uv run <cmd>` to execute. Don't use python directly but only through uv.
+    - **SQLAlchemy 2.0 style only.** Use `db.execute(select(...))` — never the legacy `db.query()` API. Models are in `py/app/models.py`, engine/session in `py/app/db.py`.</pattern>
 
   <pattern name="File Metadata (Front Matter)">
     - **Format:** TOML in a comment block at the top of `.tsx` files:

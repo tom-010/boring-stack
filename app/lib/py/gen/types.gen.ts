@@ -83,6 +83,16 @@ export type HelloResponse = {
 };
 
 /**
+ * TodoCountResponse
+ */
+export type TodoCountResponse = {
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
  * ValidationError
  */
 export type ValidationError = {
@@ -199,6 +209,36 @@ export type GenerateThumbnailGenerateThumbnailPostResponses = {
 };
 
 export type GenerateThumbnailGenerateThumbnailPostResponse = GenerateThumbnailGenerateThumbnailPostResponses[keyof GenerateThumbnailGenerateThumbnailPostResponses];
+
+export type GetTodoCountTodoCountUserIdGetData = {
+    body?: never;
+    path: {
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/todo-count/{user_id}';
+};
+
+export type GetTodoCountTodoCountUserIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetTodoCountTodoCountUserIdGetError = GetTodoCountTodoCountUserIdGetErrors[keyof GetTodoCountTodoCountUserIdGetErrors];
+
+export type GetTodoCountTodoCountUserIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: TodoCountResponse;
+};
+
+export type GetTodoCountTodoCountUserIdGetResponse = GetTodoCountTodoCountUserIdGetResponses[keyof GetTodoCountTodoCountUserIdGetResponses];
 
 export type ClientOptions = {
     baseUrl: `${string}://openapi.json` | (string & {});

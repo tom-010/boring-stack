@@ -4,7 +4,7 @@ intent = "Main dashboard with stats overview"
 import { redirect } from "react-router";
 import type { Route } from "./+types/dashboard";
 import { requireAuth } from "~/lib/auth.server";
-import { db } from "~/db/client";
+import { getTodoCountTodoCountUserIdGet, type TodoCountResponse } from "~/lib/py/client";
 import { CheckSquare2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 
@@ -15,9 +15,10 @@ export async function loader({ request }: Route.LoaderArgs) {
   }
 
   const session = await requireAuth(request);
-  const todoCount = await db.todo.count({
-    where: { userId: session.user.id },
+  const { data } = await getTodoCountTodoCountUserIdGet({
+    path: { user_id: session.user.id },
   });
+  const todoCount = (data as TodoCountResponse | undefined)?.count ?? 0;
 
   return { todoCount, userName: session.user.name };
 }

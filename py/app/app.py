@@ -7,10 +7,15 @@ from logger import init_logging
 
 init_logging()
 
-from fastapi import FastAPI, File, Query, UploadFile
+from fastapi import Depends, FastAPI, File, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from PIL import Image
 from pydantic import BaseModel
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+
+from db import get_db
+from models import Todos
 
 log = logging.getLogger("app")
 
@@ -44,6 +49,10 @@ class GenerateThumbnailRequest(BaseModel):
 
 class GenerateThumbnailResponse(BaseModel):
     thumbnail_path: str  # e.g., "/uploads/thumbnails/thumb-123-file.jpg"
+
+
+class TodoCountResponse(BaseModel):
+    count: int
 
 
 # --- Endpoints ---
@@ -141,6 +150,13 @@ async def generate_thumbnail(request: GenerateThumbnailRequest) -> GenerateThumb
     log.info(f"Thumbnail generated: {thumbnail_path}")
 
     return GenerateThumbnailResponse(thumbnail_path=thumbnail_path)
+
+
+@app.get("/todo-count/{user_id}")
+def get_todo_count(user_id: str, db: Session = Depends(get_db)) -> TodoCountResponse:
+    """Count todos for a user via SQLAlchemy."""
+    count = db.execute(select(func.count()).where(Todos.user_id == user_id).select_from(Todos)).scalar_one()
+    return TodoCountResponse(count=count)
 
 
 if __name__ == "__main__":

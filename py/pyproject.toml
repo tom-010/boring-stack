@@ -8,8 +8,11 @@ dependencies = [
     "fastapi>=0.127.0",
     "jupyter>=1.1.1",
     "pillow>=12.0.0",
+    "psycopg2-binary>=2.9.11",
     "python-multipart>=0.0.21",
     "rich>=14.2.0",
+    "sqlacodegen[pgvector]>=4.0.2",
+    "sqlalchemy>=2.0.47",
     "tqdm>=4.67.1",
     "uvicorn>=0.40.0",
 ]
